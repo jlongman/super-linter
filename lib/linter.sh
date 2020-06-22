@@ -756,7 +756,7 @@ GetValidationInfo()
   ##########################
   # Get the run local flag #
   ##########################
-  if [ -z "BITBUCKET_CODENOTIFY" ]; then
+  if [ -z "$BITBUCKET_CODENOTIFY" ]; then
     ##################################
     # No flag passed, set to default #
     ##################################
@@ -2199,7 +2199,7 @@ Footer()
     if [ "${!ERROR_COUNTER}" -ne 0 ]; then
       # Print the goods
       echo "ERRORS FOUND in $LANGUAGE:[${!ERROR_COUNTER}]"
-      if [[ "$RUN_LOCAL" != "false" && BITBUCKET_CODENOTIFY != "false"]]; then
+      if [[ "$RUN_LOCAL" != "false" && "$BITBUCKET_CODENOTIFY" != "false" ]]; then
 
         curl --request PUT "https://api.bitbucket.org/2.0/repositories/${BITBUCKET_REPO_FULL_NAME}/commit/${BITBUCKET_COMMIT}/reports/${LANGUAGE}-superlint" \
           --header 'x-token-auth: $REPOSITORY_OAUTH_ACCESS_TOKEN' \
