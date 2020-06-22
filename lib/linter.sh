@@ -104,6 +104,7 @@ VALIDATE_POWERSHELL="${VALIDATE_POWERSHELL}"          # Boolean to validate lang
 VALIDATE_KOTLIN="${VALIDATE_KOTLIN}"                  # Boolean to validate language
 TEST_CASE_RUN="${TEST_CASE_RUN}"                      # Boolean to validate only test cases
 DISABLE_ERRORS="${DISABLE_ERRORS}"                    # Boolean to enable warning-only output without throwing errors
+BITBUCKET_CODENOTIFY="${BITBUCKET_CODENOTIFY}"        # Boolean to enable bitbucket report api
 
 ##############
 # Debug Vars #
@@ -124,6 +125,7 @@ RAW_FILE_ARRAY=()                                     # Array of all files that 
 READ_ONLY_CHANGE_FLAG=0                               # Flag set to 1 if files changed are not txt or md
 TEST_CASE_FOLDER='.automation/test'                   # Folder for test cases we should always ignore
 DEFAULT_DISABLE_ERRORS='false'                        # Default to enabling errors
+DEFAULT_BITBUCKET_CODENOTIFY='false'                  # not bitbucket
 
 ##############
 # Format     #
@@ -750,6 +752,21 @@ GetValidationInfo()
   echo ""
   echo "--------------------------------------------"
   echo "Gathering user validation information..."
+
+  ##########################
+  # Get the run local flag #
+  ##########################
+  if [ -z "BITBUCKET_CODENOTIFY" ]; then
+    ##################################
+    # No flag passed, set to default #
+    ##################################
+    BITBUCKET_CODENOTIFY="$DEFAULT_BITBUCKET_CODENOTIFY"
+  fi
+
+  ###############################
+  # Convert string to lowercase #
+  ###############################
+  BITBUCKET_CODENOTIFY=$(echo "$BITBUCKET_CODENOTIFY" | awk '{print tolower($0)}')
 
   ###########################################
   # Skip validation if were running locally #
@@ -2182,7 +2199,7 @@ Footer()
     if [ "${!ERROR_COUNTER}" -ne 0 ]; then
       # Print the goods
       echo "ERRORS FOUND in $LANGUAGE:[${!ERROR_COUNTER}]"
-      if [[ "$RUN_LOCAL" != "false" ]]; then
+      if [[ "$RUN_LOCAL" != "false" && BITBUCKET_CODENOTIFY != "false"]]; then
 
         curl --request PUT "https://api.bitbucket.org/2.0/repositories/${BITBUCKET_REPO_FULL_NAME}/commit/${BITBUCKET_COMMIT}/reports/${LANGUAGE}-superlint" \
           --header 'x-token-auth: $REPOSITORY_OAUTH_ACCESS_TOKEN' \
