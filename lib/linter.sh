@@ -2182,6 +2182,27 @@ Footer()
     if [ "${!ERROR_COUNTER}" -ne 0 ]; then
       # Print the goods
       echo "ERRORS FOUND in $LANGUAGE:[${!ERROR_COUNTER}]"
+      if [[ "$RUN_LOCAL" != "false" ]]; then
+
+        curl --request PUT "https://api.bitbucket.org/2.0/repositories/${BITBUCKET_REPO_FULL_NAME}/commit/${BITBUCKET_COMMIT}/reports/${LANGUAGE}-superlint" \
+          --header 'x-token-auth: $REPOSITORY_OAUTH_ACCESS_TOKEN' \
+          --header 'Content-Type: application/json' \
+          --data-raw '{
+	"title": "SuperLinter '"${LANGUAGE}"' scan report",
+	"details": "This pull request introduces '"${!ERROR_COUNTER}"' lint problems.",
+	"report_type": "BUG",
+	"reporter": "superlint",
+	"link": "http://www.mySystem.com/reports/001",
+	"result": "FAILED",
+	"data": [
+		{
+			"title": "Safe to merge?",
+			"type": "BOOLEAN",
+			"value": false
+		}
+	]
+}'
+      fi
     fi
   done
 
