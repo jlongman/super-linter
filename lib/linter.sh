@@ -12,7 +12,7 @@
 ###########
 # Default Vars
 DEFAULT_RULES_LOCATION='/action/lib/.automation'                    # Default rules files location
-DEFAULT_LINTER_RULES_PATH='.github/linters'                         # Default linter path
+LINTER_RULES_PATH="${LINTER_RULES_PATH:-.github/linters}"           # Linter Path Directory
 # YAML Vars
 YAML_FILE_NAME='.yaml-lint.yml'                                     # Name of the file
 YAML_LINTER_RULES="$DEFAULT_RULES_LOCATION/$YAML_FILE_NAME"         # Path to the yaml lint rules
