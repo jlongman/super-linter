@@ -104,7 +104,6 @@ VALIDATE_ENV="${VALIDATE_ENV}"                        # Boolean to validate lang
 VALIDATE_KOTLIN="${VALIDATE_KOTLIN}"                  # Boolean to validate language
 TEST_CASE_RUN="${TEST_CASE_RUN}"                      # Boolean to validate only test cases
 DISABLE_ERRORS="${DISABLE_ERRORS}"                    # Boolean to enable warning-only output without throwing errors
-LINTER_PATH="${LINTER_PATH}"                          # Linter Path Directory
 
 ##############
 # Debug Vars #
