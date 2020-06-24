@@ -116,6 +116,7 @@ ACTIONS_RUNNER_DEBUG="${ACTIONS_RUNNER_DEBUG}"  # Boolean to see even more info 
 # Default Vars #
 ################
 DEFAULT_VALIDATE_ALL_CODEBASE='true'                  # Default value for validate all files
+DEFAULT_WORKSPACE="${DEFAULT_WORKSPACE-$BITBUCKET_CLONE_DIR}" # Default workspace if running locally
 DEFAULT_WORKSPACE="${DEFAULT_WORKSPACE:-/tmp/lint}"   # Default workspace if running locally
 DEFAULT_ANSIBLE_DIRECTORY="$GITHUB_WORKSPACE/ansible" # Default Ansible Directory
 DEFAULT_RUN_LOCAL='false'                             # Default value for debugging locally
@@ -1922,6 +1923,25 @@ LintCodebase()
         #########
         echo "ERROR! Found errors in [$LINTER_NAME] linter!"
         echo "ERROR:[$LINT_CMD]"
+        if [[ "$RUN_LOCAL" != "false" && "$BITBUCKET_CODENOTIFY" != "false" ]]; then
+          count=$(eval echo "$""ERRORS_FOUND_${FILE_TYPE}")
+          curl -v -X --proxy 'http://host.docker.internal:29418' --request PUT "https://api.bitbucket.org/2.0/repositories/${BITBUCKET_REPO_OWNER}/${BITBUCKET_REPO_SLUG}/commit/${BITBUCKET_COMMIT}/reports/${FILE_TYPE}-superlint/annotations/$count" \
+            --header 'Content-Type: application/json' \
+            --data-raw '{
+          "title": "SuperLinter '"${LINTER_NAME} - ${FILE_TYPE}"' scan report",
+          "summary": "'"${LINT_CMD}"'",
+          "annotation_type": "CODE_SMELL",
+          "reporter": "superlint",
+          "link": "https://www.mySystem.com/reports/001",
+          "data": [
+            {
+              "title": "Safe to merge?",
+              "type": "BOOLEAN",
+              "value": false
+            }
+          ]
+        }'
+        fi
         # Increment the error count
         (("ERRORS_FOUND_$FILE_TYPE++"))
 
