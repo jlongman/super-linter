@@ -3,31 +3,91 @@
 
 ################################################################################
 ################################################################################
-########### Super-Linter (Lint all the code) @AdmiralAwkbar ####################
+########### Super-Linter (Lint all the code) @admiralawkbar ####################
 ################################################################################
 ################################################################################
+if [[ -n "${BITBUCKET_CLONE_DIR}" ]]; then
+  DEFAULT_WORKSPACE="${DEFAULT_WORKSPACE-$BITBUCKET_CLONE_DIR}" # Default workspace if running locally
+  GITHUB_SHA="${BITBUCKET_COMMIT}"                              # GitHub sha from the commit
+  GITHUB_ORG="${BITBUCKET_REPO_OWNER}"                          # GitHub sha from the commit
+  GITHUB_REPO="${BITBUCKET_REPO_SLUG}"                          # GitHub sha from the commit
+  GITHUB_EVENT_PATH="${GITHUB_EVENT_PATH}"                      # Github Event Path
+  GITHUB_WORKSPACE="${BITBUCKET_CLONE_DIR}"                     # Github Workspace
+  DEFAULT_BRANCH="${DEFAULT_BRANCH:-$BITBUCKET_BRANCH}"         # Default Git Branch to use (master by default)
+  BITBUCKET_CODENOTIFY="${BITBUCKET_CODENOTIFY}"                # Boolean to enable bitbucket report api
+  DEFAULT_BITBUCKET_CODENOTIFY='false'                          # not bitbucket
 
+  GITHUB_EVENT_PATH=".github_event"
+  echo '{
+  "repository":
+  {
+    "name": "'"${BITBUCKET_REPO_SLUG}"'",
+    "owner": {
+      "login": "'"${BITBUCKET_REPO_OWNER}"'"
+    }
+  }
+  }' >${GITHUB_EVENT_PATH}
+  encodeComponent() {
+    jq -aRs . <<<"$1"
+  }
+  bitbucket_report() {
+    ERROR_COUNTER=$1
+    if [[ "$VALIDATE_ALL_CODEBASE" == "false" ]]; then
+      message="This pull request introduces ${ERROR_COUNTER} lint problems."
+    else
+      message="This codebase contains ${ERROR_COUNTER} lint problems."
+    fi
+    if [[ "${ERROR_COUNTER}" -ne "0" ]]; then
+      result="FAILED"
+      safe="false"
+    else
+      result="PASSED"
+      safe="true"
+    fi
+    curl -s \
+      --proxy 'http://host.docker.internal:29418' \
+      --request PUT \
+      "http://api.bitbucket.org/2.0/repositories/${BITBUCKET_REPO_FULL_NAME}/commit/${BITBUCKET_COMMIT}/reports/superlint" \
+      --header 'Content-Type: application/json' \
+      --data-raw '{
+	"title": "SuperLinter scan report",
+	"details": "'"${message}"'",
+	"report_type": "BUG",
+	"reporter": "superlint",
+	"result": "'"${result}"'",
+	"data": [
+		{
+			"title": "Safe to merge?",
+			"type": "BOOLEAN",
+			"value": '"${safe}"'
+		}
+	]
+}'
+  }
+fi
+
+env | sort                                                              # FIXME debugging
 ###########
 # GLOBALS #
 ###########
 # Default Vars
-DEFAULT_RULES_LOCATION='/action/lib/.automation'                    # Default rules files location
-LINTER_RULES_PATH="${LINTER_RULES_PATH:-.github/linters}"           # Linter Path Directory
+DEFAULT_RULES_LOCATION='/action/lib/.automation'                        # Default rules files location
+LINTER_RULES_PATH="${LINTER_RULES_PATH:-.github/linters}"               # Linter Path Directory
 # YAML Vars
-YAML_FILE_NAME='.yaml-lint.yml'                                     # Name of the file
-YAML_LINTER_RULES="$DEFAULT_RULES_LOCATION/$YAML_FILE_NAME"         # Path to the yaml lint rules
+YAML_FILE_NAME='.yaml-lint.yml'                                         # Name of the file
+YAML_LINTER_RULES="$DEFAULT_RULES_LOCATION/$YAML_FILE_NAME"             # Path to the yaml lint rules
 # MD Vars
-MD_FILE_NAME='.markdown-lint.yml'                                   # Name of the file
-MD_LINTER_RULES="$DEFAULT_RULES_LOCATION/$MD_FILE_NAME"             # Path to the markdown lint rules
+MD_FILE_NAME='.markdown-lint.yml'                                       # Name of the file
+MD_LINTER_RULES="$DEFAULT_RULES_LOCATION/$MD_FILE_NAME"                 # Path to the markdown lint rules
 # Python Vars
-PYTHON_FILE_NAME='.python-lint'                                     # Name of the file
-PYTHON_LINTER_RULES="$DEFAULT_RULES_LOCATION/$PYTHON_FILE_NAME"     # Path to the python lint rules
+PYTHON_FILE_NAME='.python-lint'                                         # Name of the file
+PYTHON_LINTER_RULES="$DEFAULT_RULES_LOCATION/$PYTHON_FILE_NAME"         # Path to the python lint rules
 # Ruby Vars
-RUBY_FILE_NAME='.ruby-lint.yml'                                     # Name of the file
-RUBY_LINTER_RULES="$DEFAULT_RULES_LOCATION/$RUBY_FILE_NAME"         # Path to the ruby lint rules
+RUBY_FILE_NAME='.ruby-lint.yml'                                         # Name of the file
+RUBY_LINTER_RULES="$DEFAULT_RULES_LOCATION/$RUBY_FILE_NAME"             # Path to the ruby lint rules
 # Coffee Vars
-COFFEE_FILE_NAME='.coffee-lint.json'                                  # Name of the file
-COFFEESCRIPT_LINTER_RULES="$DEFAULT_RULES_LOCATION/$COFFEE_FILE_NAME" # Path to the coffescript lint rules
+COFFEE_FILE_NAME='.coffee-lint.json'                                    # Name of the file
+COFFEESCRIPT_LINTER_RULES="$DEFAULT_RULES_LOCATION/$COFFEE_FILE_NAME"   # Path to the coffescript lint rules
 # Javascript Vars
 JAVASCRIPT_FILE_NAME='.eslintrc.yml'                                    # Name of the file
 JAVASCRIPT_LINTER_RULES="$DEFAULT_RULES_LOCATION/$JAVASCRIPT_FILE_NAME" # Path to the Javascript lint rules
@@ -37,23 +97,23 @@ TYPESCRIPT_FILE_NAME='.eslintrc.yml'                                    # Name o
 TYPESCRIPT_LINTER_RULES="$DEFAULT_RULES_LOCATION/$TYPESCRIPT_FILE_NAME" # Path to the Typescript lint rules
 TYPESCRIPT_STANDARD_LINTER_RULES=''                                     # ENV string to pass when running js standard
 # Ansible Vars
-ANSIBLE_FILE_NAME='.ansible-lint.yml'                               # Name of the file
-ANSIBLE_LINTER_RULES="$DEFAULT_RULES_LOCATION/$ANSIBLE_FILE_NAME"   # Path to the Ansible lint rules
+ANSIBLE_FILE_NAME='.ansible-lint.yml'                                   # Name of the file
+ANSIBLE_LINTER_RULES="$DEFAULT_RULES_LOCATION/$ANSIBLE_FILE_NAME"       # Path to the Ansible lint rules
 # Docker Vars
-DOCKER_FILE_NAME='.dockerfilelintrc'                                # Name of the file
-DOCKER_LINTER_RULES="$DEFAULT_RULES_LOCATION/$DOCKER_FILE_NAME"     # Path to the Docker lint rules
+DOCKER_FILE_NAME='.dockerfilelintrc'                                    # Name of the file
+DOCKER_LINTER_RULES="$DEFAULT_RULES_LOCATION/$DOCKER_FILE_NAME"         # Path to the Docker lint rules
 # Golang Vars
-GO_FILE_NAME='.golangci.yml'                                        # Name of the file
-GO_LINTER_RULES="$DEFAULT_RULES_LOCATION/$GO_FILE_NAME"             # Path to the Go lint rules
+GO_FILE_NAME='.golangci.yml'                                            # Name of the file
+GO_LINTER_RULES="$DEFAULT_RULES_LOCATION/$GO_FILE_NAME"                 # Path to the Go lint rules
 # Terraform Vars
-TERRAFORM_FILE_NAME='.tflint.hcl'                                        # Name of the file
-TERRAFORM_LINTER_RULES="$DEFAULT_RULES_LOCATION/$TERRAFORM_FILE_NAME"    # Path to the Terraform lint rules
+TERRAFORM_FILE_NAME='.tflint.hcl'                                       # Name of the file
+TERRAFORM_LINTER_RULES="$DEFAULT_RULES_LOCATION/$TERRAFORM_FILE_NAME"   # Path to the Terraform lint rules
 # Powershell Vars
-POWERSHELL_FILE_NAME='.powershell-psscriptanalyzer.psd1'                   # Name of the file
-POWERSHELL_LINTER_RULES="$DEFAULT_RULES_LOCATION/$POWERSHELL_FILE_NAME"    # Path to the Powershell lint rules
+POWERSHELL_FILE_NAME='.powershell-psscriptanalyzer.psd1'                # Name of the file
+POWERSHELL_LINTER_RULES="$DEFAULT_RULES_LOCATION/$POWERSHELL_FILE_NAME" # Path to the Powershell lint rules
 # CSS Vars
-CSS_FILE_NAME='.stylelintrc.json'                                   # Name of the file
-CSS_LINTER_RULES="$DEFAULT_RULES_LOCATION/$CSS_FILE_NAME"           # Path to the CSS lint rules
+CSS_FILE_NAME='.stylelintrc.json'                         # Name of the file
+CSS_LINTER_RULES="$DEFAULT_RULES_LOCATION/$CSS_FILE_NAME" # Path to the CSS lint rules
 
 #######################################
 # Linter array for information prints #
@@ -70,47 +130,46 @@ LANGUAGE_ARRAY=('YML' 'JSON' 'XML' 'MARKDOWN' 'BASH' 'PERL' 'PHP' 'RUBY' 'PYTHON
   'COFFEESCRIPT' 'ANSIBLE' 'JAVASCRIPT_STANDARD' 'JAVASCRIPT_ES'
   'TYPESCRIPT_STANDARD' 'TYPESCRIPT_ES' 'DOCKER' 'GO' 'TERRAFORM'
   'ENV' 'POWERSHELL' 'KOTLIN')
-
 ###################
 # GitHub ENV Vars #
 ###################
-GITHUB_SHA="${GITHUB_SHA}"                            # GitHub sha from the commit
-GITHUB_EVENT_PATH="${GITHUB_EVENT_PATH}"              # Github Event Path
-GITHUB_WORKSPACE="${GITHUB_WORKSPACE}"                # Github Workspace
-DEFAULT_BRANCH="${DEFAULT_BRANCH:-master}"            # Default Git Branch to use (master by default)
-ANSIBLE_DIRECTORY="${ANSIBLE_DIRECTORY}"              # Ansible Directory
-VALIDATE_ALL_CODEBASE="${VALIDATE_ALL_CODEBASE}"      # Boolean to validate all files
-VALIDATE_YAML="${VALIDATE_YAML}"                      # Boolean to validate language
-VALIDATE_JSON="${VALIDATE_JSON}"                      # Boolean to validate language
-VALIDATE_XML="${VALIDATE_XML}"                        # Boolean to validate language
-VALIDATE_MD="${VALIDATE_MD}"                          # Boolean to validate language
-VALIDATE_BASH="${VALIDATE_BASH}"                      # Boolean to validate language
-VALIDATE_PERL="${VALIDATE_PERL}"                      # Boolean to validate language
-VALIDATE_PHP="${VALIDATE_PHP}"                        # Boolean to validate language
-VALIDATE_PYTHON="${VALIDATE_PYTHON}"                  # Boolean to validate language
-VALIDATE_RUBY="${VALIDATE_RUBY}"                      # Boolean to validate language
-VALIDATE_COFFEE="${VALIDATE_COFFEE}"                  # Boolean to validate language
-VALIDATE_ANSIBLE="${VALIDATE_ANSIBLE}"                # Boolean to validate language
-VALIDATE_JAVASCRIPT_ES="${VALIDATE_JAVASCRIPT_ES}"              # Boolean to validate language
-VALIDATE_JAVASCRIPT_STANDARD="${VALIDATE_JAVASCRIPT_STANDARD}"  # Boolean to validate language
-VALIDATE_TYPESCRIPT_ES="${VALIDATE_TYPESCRIPT_ES}"              # Boolean to validate language
-VALIDATE_TYPESCRIPT_STANDARD="${VALIDATE_TYPESCRIPT_STANDARD}"  # Boolean to validate language
-VALIDATE_DOCKER="${VALIDATE_DOCKER}"                  # Boolean to validate language
-VALIDATE_GO="${VALIDATE_GO}"                          # Boolean to validate language
-VALIDATE_TERRAFORM="${VALIDATE_TERRAFORM}"            # Boolean to validate language
-VALIDATE_POWERSHELL="${VALIDATE_POWERSHELL}"          # Boolean to validate language
-VALIDATE_CSS="${VALIDATE_CSS}"                        # Boolean to validate language
-VALIDATE_ENV="${VALIDATE_ENV}"                        # Boolean to validate language
-VALIDATE_KOTLIN="${VALIDATE_KOTLIN}"                  # Boolean to validate language
-TEST_CASE_RUN="${TEST_CASE_RUN}"                      # Boolean to validate only test cases
-DISABLE_ERRORS="${DISABLE_ERRORS}"                    # Boolean to enable warning-only output without throwing errors
-BITBUCKET_CODENOTIFY="${BITBUCKET_CODENOTIFY}"        # Boolean to enable bitbucket report api
+GITHUB_SHA="${GITHUB_SHA}"                                     # GitHub sha from the commit
+GITHUB_EVENT_PATH="${GITHUB_EVENT_PATH}"                       # Github Event Path
+GITHUB_WORKSPACE="${GITHUB_WORKSPACE}"                         # Github Workspace
+DEFAULT_BRANCH="${DEFAULT_BRANCH:-master}"                     # Default Git Branch to use (master by default)
+ANSIBLE_DIRECTORY="${ANSIBLE_DIRECTORY}"                       # Ansible Directory
+VALIDATE_ALL_CODEBASE="${VALIDATE_ALL_CODEBASE}"               # Boolean to validate all files
+VALIDATE_YAML="${VALIDATE_YAML}"                               # Boolean to validate language
+VALIDATE_JSON="${VALIDATE_JSON}"                               # Boolean to validate language
+VALIDATE_XML="${VALIDATE_XML}"                                 # Boolean to validate language
+VALIDATE_MD="${VALIDATE_MD}"                                   # Boolean to validate language
+VALIDATE_BASH="${VALIDATE_BASH}"                               # Boolean to validate language
+VALIDATE_PERL="${VALIDATE_PERL}"                               # Boolean to validate language
+VALIDATE_PHP="${VALIDATE_PHP}"                                 # Boolean to validate language
+VALIDATE_PYTHON="${VALIDATE_PYTHON}"                           # Boolean to validate language
+VALIDATE_RUBY="${VALIDATE_RUBY}"                               # Boolean to validate language
+VALIDATE_COFFEE="${VALIDATE_COFFEE}"                           # Boolean to validate language
+VALIDATE_ANSIBLE="${VALIDATE_ANSIBLE}"                         # Boolean to validate language
+VALIDATE_JAVASCRIPT_ES="${VALIDATE_JAVASCRIPT_ES}"             # Boolean to validate language
+VALIDATE_JAVASCRIPT_STANDARD="${VALIDATE_JAVASCRIPT_STANDARD}" # Boolean to validate language
+VALIDATE_TYPESCRIPT_ES="${VALIDATE_TYPESCRIPT_ES}"             # Boolean to validate language
+VALIDATE_TYPESCRIPT_STANDARD="${VALIDATE_TYPESCRIPT_STANDARD}" # Boolean to validate language
+VALIDATE_DOCKER="${VALIDATE_DOCKER}"                           # Boolean to validate language
+VALIDATE_GO="${VALIDATE_GO}"                                   # Boolean to validate language
+VALIDATE_CSS="${VALIDATE_CSS}"                                 # Boolean to validate language
+VALIDATE_ENV="${VALIDATE_ENV}"                                 # Boolean to validate language
+VALIDATE_TERRAFORM="${VALIDATE_TERRAFORM}"                     # Boolean to validate language
+VALIDATE_POWERSHELL="${VALIDATE_POWERSHELL}"                   # Boolean to validate language
+VALIDATE_KOTLIN="${VALIDATE_KOTLIN}"                           # Boolean to validate language
+TEST_CASE_RUN="${TEST_CASE_RUN}"                               # Boolean to validate only test cases
+DISABLE_ERRORS="${DISABLE_ERRORS}"                             # Boolean to enable warning-only output without throwing errors
+BITBUCKET_CODENOTIFY="${BITBUCKET_CODENOTIFY}"                 # Boolean to enable bitbucket report api
 
 ##############
 # Debug Vars #
 ##############
-RUN_LOCAL="${RUN_LOCAL}"                        # Boolean to see if we are running locally
-ACTIONS_RUNNER_DEBUG="${ACTIONS_RUNNER_DEBUG}"  # Boolean to see even more info (debug)
+RUN_LOCAL="${RUN_LOCAL}"                              # Boolean to see if we are running locally
+ACTIONS_RUNNER_DEBUG="${ACTIONS_RUNNER_DEBUG}"        # Boolean to see even more info (debug)
 
 ################
 # Default Vars #
@@ -125,78 +184,84 @@ RAW_FILE_ARRAY=()                                     # Array of all files that 
 READ_ONLY_CHANGE_FLAG=0                               # Flag set to 1 if files changed are not txt or md
 TEST_CASE_FOLDER='.automation/test'                   # Folder for test cases we should always ignore
 DEFAULT_DISABLE_ERRORS='false'                        # Default to enabling errors
-DEFAULT_BITBUCKET_CODENOTIFY='false'                  # not bitbucket
 
 ##############
 # Format     #
 ##############
-OUTPUT_FORMAT="${OUTPUT_FORMAT}"                             # Output format to be generated. Default none
-OUTPUT_FOLDER="${OUTPUT_FOLDER:-super-linter.report}"        # Folder where the reports are generated. Default super-linter.report
+OUTPUT_FORMAT="${OUTPUT_FORMAT}"                      # Output format to be generated. Default none
+OUTPUT_FOLDER="${OUTPUT_FOLDER:-super-linter.report}" # Folder where the reports are generated. Default super-linter.report
 REPORT_OUTPUT_FOLDER="${DEFAULT_WORKSPACE}/${OUTPUT_FOLDER}"
+XUNIT_OUTPUT_FOLDER="${DEFAULT_WORKSPACE}/${OUTPUT_FOLDER}/test-reports"
 
 ##########################
 # Array of changed files #
 ##########################
-FILE_ARRAY_YML=()                   # Array of files to check
-FILE_ARRAY_JSON=()                  # Array of files to check
-FILE_ARRAY_XML=()                   # Array of files to check
-FILE_ARRAY_MD=()                    # Array of files to check
-FILE_ARRAY_BASH=()                  # Array of files to check
-FILE_ARRAY_PERL=()                  # Array of files to check
-FILE_ARRAY_PHP=()                   # Array of files to check
-FILE_ARRAY_RUBY=()                  # Array of files to check
-FILE_ARRAY_PYTHON=()                # Array of files to check
-FILE_ARRAY_COFFEESCRIPT=()          # Array of files to check
-FILE_ARRAY_JAVASCRIPT_ES=()         # Array of files to check
-FILE_ARRAY_JAVASCRIPT_STANDARD=()   # Array of files to check
-FILE_ARRAY_TYPESCRIPT_ES=()         # Array of files to check
-FILE_ARRAY_TYPESCRIPT_STANDARD=()   # Array of files to check
-FILE_ARRAY_DOCKER=()                # Array of files to check
-FILE_ARRAY_GO=()                    # Array of files to check
-FILE_ARRAY_TERRAFORM=()             # Array of files to check
-FILE_ARRAY_POWERSHELL=()            # Array of files to check
-FILE_ARRAY_CSS=()                   # Array of files to check
-FILE_ARRAY_ENV=()                   # Array of files to check
-FILE_ARRAY_KOTLIN=()                # Array of files to check
+FILE_ARRAY_YML=()                  # Array of files to check
+FILE_ARRAY_JSON=()                 # Array of files to check
+FILE_ARRAY_XML=()                  # Array of files to check
+FILE_ARRAY_MD=()                   # Array of files to check
+FILE_ARRAY_BASH=()                 # Array of files to check
+FILE_ARRAY_PERL=()                 # Array of files to check
+FILE_ARRAY_PHP=()                  # Array of files to check
+FILE_ARRAY_RUBY=()                 # Array of files to check
+FILE_ARRAY_PYTHON=()               # Array of files to check
+FILE_ARRAY_COFFEESCRIPT=()         # Array of files to check
+FILE_ARRAY_JAVASCRIPT_ES=()        # Array of files to check
+FILE_ARRAY_JAVASCRIPT_STANDARD=()  # Array of files to check
+FILE_ARRAY_TYPESCRIPT_ES=()        # Array of files to check
+FILE_ARRAY_TYPESCRIPT_STANDARD=()  # Array of files to check
+FILE_ARRAY_DOCKER=()               # Array of files to check
+FILE_ARRAY_GO=()                   # Array of files to check
+FILE_ARRAY_TERRAFORM=()            # Array of files to check
+FILE_ARRAY_POWERSHELL=()           # Array of files to check
+FILE_ARRAY_CSS=()                  # Array of files to check
+FILE_ARRAY_ENV=()                  # Array of files to check
+FILE_ARRAY_KOTLIN=()               # Array of files to check
 
 ############
 # Counters #
 ############
-ERRORS_FOUND_YML=0                  # Count of errors found
-ERRORS_FOUND_JSON=0                 # Count of errors found
-ERRORS_FOUND_XML=0                  # Count of errors found
-ERRORS_FOUND_MARKDOWN=0             # Count of errors found
-ERRORS_FOUND_BASH=0                 # Count of errors found
-ERRORS_FOUND_PERL=0                 # Count of errors found
-ERRORS_FOUND_PHP=0                  # Count of errors found
-ERRORS_FOUND_RUBY=0                 # Count of errors found
-ERRORS_FOUND_PYTHON=0               # Count of errors found
-ERRORS_FOUND_COFFEESCRIPT=0         # Count of errors found
-ERRORS_FOUND_ANSIBLE=0              # Count of errors found
-ERRORS_FOUND_JAVASCRIPT_STANDARD=0  # Count of errors found
-ERRORS_FOUND_JAVASCRIPT_ES=0        # Count of errors found
-ERRORS_FOUND_TYPESCRIPT_STANDARD=0  # Count of errors found
-ERRORS_FOUND_TYPESCRIPT_ES=0        # Count of errors found
-ERRORS_FOUND_DOCKER=0               # Count of errors found
-ERRORS_FOUND_GO=0                   # Count of errors found
-ERRORS_FOUND_TERRAFORM=0            # Count of errors found
-ERRORS_FOUND_POWERSHELL=0           # Count of errors found
-ERRORS_FOUND_CSS=0                  # Count of errors found
-ERRORS_FOUND_ENV=0                  # Count of errors found
-ERRORS_FOUND_KOTLIN=0               # Count of errors found
+ERRORS_FOUND_YML=0                 # Count of errors found
+ERRORS_FOUND_JSON=0                # Count of errors found
+ERRORS_FOUND_XML=0                 # Count of errors found
+ERRORS_FOUND_MARKDOWN=0            # Count of errors found
+ERRORS_FOUND_BASH=0                # Count of errors found
+ERRORS_FOUND_PERL=0                # Count of errors found
+ERRORS_FOUND_PHP=0                 # Count of errors found
+ERRORS_FOUND_RUBY=0                # Count of errors found
+ERRORS_FOUND_PYTHON=0              # Count of errors found
+ERRORS_FOUND_COFFEESCRIPT=0        # Count of errors found
+ERRORS_FOUND_ANSIBLE=0             # Count of errors found
+ERRORS_FOUND_JAVASCRIPT_STANDARD=0 # Count of errors found
+ERRORS_FOUND_JAVASCRIPT_ES=0       # Count of errors found
+ERRORS_FOUND_TYPESCRIPT_STANDARD=0 # Count of errors found
+ERRORS_FOUND_TYPESCRIPT_ES=0       # Count of errors found
+ERRORS_FOUND_DOCKER=0              # Count of errors found
+ERRORS_FOUND_GO=0                  # Count of errors found
+ERRORS_FOUND_TERRAFORM=0           # Count of errors found
+ERRORS_FOUND_POWERSHELL=0          # Count of errors found
+ERRORS_FOUND_CSS=0                 # Count of errors found
+ERRORS_FOUND_ENV=0                 # Count of errors found
+ERRORS_FOUND_KOTLIN=0              # Count of errors found
+TOTAL_ERRORS_FOUND=0
+if [[ "$RUN_LOCAL" == "false" && "$BITBUCKET_CODENOTIFY" != "false" ]]; then
+  bitbucket_report 0
+fi
+
 
 ################################################################################
 ########################## FUNCTIONS BELOW #####################################
 ################################################################################
 ################################################################################
 #### Function Header ###########################################################
-Header()
-{
+Header() {
   ###############################
   # Give them the possum action #
   ###############################
   /bin/bash /action/lib/possum.sh
-
+  if [ -n "${OUTPUT_FORMAT}" ]; then
+    mkdir -p test-reports
+  fi
   ##########
   # Prints #
   ##########
@@ -212,8 +277,7 @@ Header()
 }
 ################################################################################
 #### Function GetLinterVersions ################################################
-GetLinterVersions()
-{
+GetLinterVersions() {
   #########################
   # Print version headers #
   #########################
@@ -258,15 +322,14 @@ GetLinterVersions()
 }
 ################################################################################
 #### Function GetLinterRules ###################################################
-GetLinterRules()
-{
+GetLinterRules() {
   # Need to validate the rules files exist
 
   ################
   # Pull in vars #
   ################
-  FILE_NAME="$1"      # Name fo the linter file
-  FILE_LOCATION="$2"  # Location of the linter file
+  FILE_NAME="$1"     # Name fo the linter file
+  FILE_LOCATION="$2" # Location of the linter file
 
   #####################################
   # Validate we have the linter rules #
@@ -304,8 +367,7 @@ GetLinterRules()
 }
 ################################################################################
 #### Function GetStandardRules #################################################
-GetStandardRules()
-{
+GetStandardRules() {
   ################
   # Pull In Vars #
   ################
@@ -326,10 +388,10 @@ GetStandardRules()
   GET_ENV_ARRAY=()
   if [[ "$LINTER" == "javascript" ]]; then
     # shellcheck disable=SC2207
-    GET_ENV_ARRAY=($(yq .env "$JAVASCRIPT_LINTER_RULES" |grep true))
+    GET_ENV_ARRAY=($(yq .env "$JAVASCRIPT_LINTER_RULES" | grep true))
   elif [[ "$LINTER" == "typescript" ]]; then
     # shellcheck disable=SC2207
-    GET_ENV_ARRAY=($(yq .env "$TYPESCRIPT_LINTER_RULES" |grep true))
+    GET_ENV_ARRAY=($(yq .env "$TYPESCRIPT_LINTER_RULES" | grep true))
   fi
 
   #######################
@@ -386,8 +448,8 @@ GetStandardRules()
 }
 ################################################################################
 #### Function LintAnsibleFiles #################################################
-LintAnsibleFiles()
-{
+LintAnsibleFiles() {
+  FILE_TYPE="ansible"
   ######################
   # Create Print Array #
   ######################
@@ -489,7 +551,7 @@ LintAnsibleFiles()
     ####################################
     # Check if we have data to look at #
     ####################################
-    if [ $SKIP_FLAG -eq 0 ]; then
+    if [ ${SKIP_FLAG} -eq 0 ]; then
       for LINE in "${PRINT_ARRAY[@]}"
       do
         #########################
@@ -502,7 +564,7 @@ LintAnsibleFiles()
     ####################################
     # Prepare context if OUTPUT_FORMAT #
     ####################################
-    if IsTAP ; then
+    if IsTAP; then
       TMPFILE=$(mktemp -q "/tmp/super-linter-${FILE_TYPE}.XXXXXX")
       INDEX=0
       mkdir -p "${REPORT_OUTPUT_FOLDER}"
@@ -560,13 +622,13 @@ LintAnsibleFiles()
         echo "ERROR:[$LINT_CMD]"
         # Increment error count
         ((ERRORS_FOUND_ANSIBLE++))
-
+        ((TOTAL_ERRORS_FOUND++))
         #######################################################
         # Store the linting as a temporary file in TAP format #
         #######################################################
-        if IsTAP ; then
-          echo "nok ok ${INDEX} - ${FILE}" >> "${TMPFILE}"
-          printf "  ---\n  message:[%s]\n  ..." "$LINT_CMD" >> "${TMPFILE}"
+        if IsTAP; then
+          echo "not ok ${INDEX} - ${FILE}" >>"${TMPFILE}"
+          printf "  ---\n  message:[%s]\n  ..." "$LINT_CMD" >>"${TMPFILE}"
         fi
       else
         ###########
@@ -577,8 +639,8 @@ LintAnsibleFiles()
         #######################################################
         # Store the linting as a temporary file in TAP format #
         #######################################################
-        if IsTAP ; then
-          echo "ok ${INDEX} - ${FILE}" >> "${TMPFILE}"
+        if IsTAP; then
+          echo "ok ${INDEX} - ${FILE}" >>"${TMPFILE}"
         fi
       fi
     done
@@ -586,9 +648,9 @@ LintAnsibleFiles()
     #################################
     # Generate report in TAP format #
     #################################
-    if IsTAP && [ ${INDEX} -gt 0 ] ; then
-      printf "TAP version 13\n1..%s\n" "${INDEX}" > "${REPORT_OUTPUT_FILE}"
-      cat "${TMPFILE}" >> "${REPORT_OUTPUT_FILE}"
+    if IsTAP && [ ${INDEX} -gt 0 ]; then
+      printf "TAP version 13\n" # ${FILE_TYPE}"1..%s\n" "${INDEX}" >"${REPORT_OUTPUT_FILE}"
+      cat "${TMPFILE}" >>"${REPORT_OUTPUT_FILE}"
     fi
 
   else # No ansible directory found in path
@@ -606,8 +668,7 @@ LintAnsibleFiles()
 }
 ################################################################################
 #### Function GetGitHubVars ####################################################
-GetGitHubVars()
-{
+GetGitHubVars() {
   ##########
   # Prints #
   ##########
@@ -711,7 +772,7 @@ GetGitHubVars()
     # Get the GitHub Org #
     ######################
     # shellcheck disable=SC2002
-    GITHUB_ORG=$(cat "$GITHUB_EVENT_PATH" | jq -r '.repository.owner.login' )
+    GITHUB_ORG=$(cat "$GITHUB_EVENT_PATH" | jq -r '.repository.owner.login')
 
     ############################
     # Validate we have a value #
@@ -728,7 +789,7 @@ GetGitHubVars()
     # Get the GitHub Repo #
     #######################
     # shellcheck disable=SC2002
-    GITHUB_REPO=$(cat "$GITHUB_EVENT_PATH"| jq -r '.repository.name' )
+    GITHUB_REPO=$(cat "$GITHUB_EVENT_PATH" | jq -r '.repository.name')
 
     ############################
     # Validate we have a value #
@@ -744,8 +805,7 @@ GetGitHubVars()
 }
 ################################################################################
 #### Function GetValidationInfo ################################################
-GetValidationInfo()
-{
+GetValidationInfo() {
   ############################################
   # Print headers for user provided env vars #
   ############################################
@@ -1157,7 +1217,6 @@ GetValidationInfo()
     VALIDATE_KOTLIN="true"
   fi
 
-
   #######################################
   # Print which linters we are enabling #
   #######################################
@@ -1357,70 +1416,92 @@ GetValidationInfo()
 }
 ################################################################################
 #### Function BuildFileList ####################################################
-BuildFileList()
-{
+BuildFileList() {
   # Need to build a list of all files changed
   # This can be pulled from the GITHUB_EVENT_PATH payload
+  if [[ -n "${BITBUCKET_CLONE_DIR}" ]]; then
+    set -x
+    mkdir -p ~/.ssh
+    (
+      umask 077
+      echo "$THIS_SSH_KEY" >~/.ssh/id_rsa
+    )
 
-  ################
-  # print header #
-  ################
-  if [[ "$ACTIONS_RUNNER_DEBUG" == "true" ]]; then
-    echo ""
-    echo "----------------------------------------------"
-    echo "Pulling in code history and branches..."
+    git remote set-url origin "${BITBUCKET_GIT_SSH_ORIGIN}" # TODO if we go with this we need to install ssh `
+    #            git remote set-url origin "${BITBUCKET_GIT_HTTP_ORIGIN}"
+    #            git remote set-url origin 'http://host.docker.internal:29418'
+    git diff --names-only HEAD~1
+
+    #    if [ ${#RAW_FILE_ARRAY[@]} -eq 0 ]; then
+    #      echo No files in changelist? Unlikely. Erroring.
+    #      exit 1
+    #    fi
+    #
+    # FIXME solve this problem
+    set +x
   fi
+  if true; then
+    #    git remote set-url origin "${BITBUCKET_GIT_SSH_ORIGIN}"  # TODO if we go with this we need to install ssh `
 
-  #################################################################################
-  # Switch codebase back to the default branch to get a list of all files changed #
-  #################################################################################
+    ################
+    # print header #
+    ################
+    if [[ "$ACTIONS_RUNNER_DEBUG" == "true" ]]; then
+      echo ""
+      echo "----------------------------------------------"
+      echo "Pulling in code history and branches..."
+    fi
+
+    #################################################################################
+    # Switch codebase back to the default branch to get a list of all files changed #
+    #################################################################################
   SWITCH_CMD=$(cd "$GITHUB_WORKSPACE" || exit; git pull --quiet; git checkout "$DEFAULT_BRANCH" 2>&1)
 
-  #######################
-  # Load the error code #
-  #######################
-  ERROR_CODE=$?
+    #######################
+    # Load the error code #
+    #######################
+    ERROR_CODE=$?
 
-  ##############################
-  # Check the shell for errors #
-  ##############################
-  if [ $ERROR_CODE -ne 0 ]; then
-    # Error
-    echo "Failed to switch to $DEFAULT_BRANCH branch to get files changed!"
-    echo "ERROR:[$SWITCH_CMD]"
-    exit 1
-  fi
+    ##############################
+    # Check the shell for errors #
+    ##############################
+    if [ $ERROR_CODE -ne 0 ]; then
+      # Error
+      echo "Failed to switch to $DEFAULT_BRANCH branch to get files changed!"
+      echo "ERROR:[$SWITCH_CMD]"
+      exit 1
+    fi
 
-  ################
-  # print header #
-  ################
-  if [[ "$ACTIONS_RUNNER_DEBUG" == "true" ]]; then
-    echo ""
-    echo "----------------------------------------------"
-    echo "Generating Diff with:[git diff --name-only '$DEFAULT_BRANCH..$GITHUB_SHA' --diff-filter=d]"
-  fi
+    ################
+    # print header #
+    ################
+    if [[ "$ACTIONS_RUNNER_DEBUG" == "true" ]]; then
+      echo ""
+      echo "----------------------------------------------"
+      echo "Generating Diff with:[git diff --name-only '$DEFAULT_BRANCH..$GITHUB_SHA' --diff-filter=d]"
+    fi
 
-  #################################################
-  # Get the Array of files changed in the commits #
-  #################################################
-  # shellcheck disable=SC2207
+    #################################################
+    # Get the Array of files changed in the commits #
+    #################################################
+    # shellcheck disable=SC2207
   RAW_FILE_ARRAY=($(cd "$GITHUB_WORKSPACE" || exit; git diff --name-only "$DEFAULT_BRANCH..$GITHUB_SHA" --diff-filter=d 2>&1))
 
-  #######################
-  # Load the error code #
-  #######################
-  ERROR_CODE=$?
+    #######################
+    # Load the error code #
+    #######################
+    ERROR_CODE=$?
 
-  ##############################
-  # Check the shell for errors #
-  ##############################
-  if [ $ERROR_CODE -ne 0 ]; then
-    # Error
-    echo "ERROR! Failed to gain a list of all files changed!"
-    echo "ERROR:[${RAW_FILE_ARRAY[*]}]"
-    exit 1
+    ##############################
+    # Check the shell for errors #
+    ##############################
+    if [ $ERROR_CODE -ne 0 ]; then
+      # Error
+      echo "ERROR! Failed to gain a list of all files changed!"
+      echo "ERROR:[${RAW_FILE_ARRAY[*]}]"
+      exit 1
+    fi
   fi
-
   ################################################
   # Iterate through the array of all files found #
   ################################################
@@ -1735,8 +1816,7 @@ BuildFileList()
 }
 ################################################################################
 #### Function LintCodebase #####################################################
-LintCodebase()
-{
+LintCodebase() {
   ####################
   # Pull in the vars #
   ####################
@@ -1848,7 +1928,7 @@ LintCodebase()
     ####################################
     # Prepare context if OUTPUT_FORMAT #
     ####################################
-    if IsTAP ; then
+    if IsTAP; then
       TMPFILE=$(mktemp -q "/tmp/super-linter-${FILE_TYPE}.XXXXXX")
       INDEX=0
       mkdir -p "${REPORT_OUTPUT_FOLDER}"
@@ -1900,7 +1980,7 @@ LintCodebase()
         # Lint the file with the rules #
         ################################
         # Need to append "'" to make the pwsh call syntax correct, also exit with exit code from inner subshell
-        LINT_CMD=$(cd "$GITHUB_WORKSPACE/$TEST_CASE_FOLDER" || exit; $LINTER_COMMAND "$FILE"; exit $? 2>&1)
+        LINT_CMD=$(cd "$GITHUB_WORKSPACE" || exit; $LINTER_COMMAND "$FILE"; exit $? 2>&1)
       else
         ################################
         # Lint the file with the rules #
@@ -1921,16 +2001,46 @@ LintCodebase()
         # Error #
         #########
         echo "ERROR! Found errors in [$LINTER_NAME] linter!"
+        echo "To locally re-execute run the following:"
+        echo "docker run -v \$PWD/$(dirname "${FILE}"):/tmp/lint -e RUN_LOCAL=true -eVALIDATE_${FILE_TYPE}=true  --rm -it jlongman/super-linter:stable"
         echo "ERROR:[$LINT_CMD]"
+        DETAILS=$(encodeComponent "${LINT_CMD}"| sed -e 's|\n|<br />\n|g') # note already quoted
+        if [[ "$RUN_LOCAL" == "false" && "$BITBUCKET_CODENOTIFY" != "false" ]]; then
+          data='{
+            "title": "'"${LINTER_NAME} - ${TOTAL_ERRORS_FOUND}/${#LIST_FILES[@]} - ${FILE_TYPE}"'",
+            "summary": "'"${LINTER_NAME}"' detected a problem",
+            "details": '"${DETAILS}"',
+            "annotation_type": "CODE_SMELL",
+            "reporter": "superlint",
+            "path": "'"${FILE}"'",
+            "data": [
+              {
+                "title": "Safe to merge?",
+                "type": "BOOLEAN",
+                "value": false
+              }
+            ]
+          }'
+          echo "$data"                      #FIXME
+          echo "totes: $TOTAL_ERRORS_FOUND" # FIXME
+          curl -s \
+            --proxy 'http://host.docker.internal:29418' \
+            --request PUT \
+            "http://api.bitbucket.org/2.0/repositories/${BITBUCKET_REPO_OWNER}/${BITBUCKET_REPO_SLUG}/commit/${BITBUCKET_COMMIT}/reports/superlint/annotations/$TOTAL_ERRORS_FOUND" \
+            --header 'Content-Type: application/json' \
+            --data-raw "${data}"
+        fi
         # Increment the error count
         (("ERRORS_FOUND_$FILE_TYPE++"))
-
+        (("TOTAL_ERRORS_FOUND++"))
         #######################################################
         # Store the linting as a temporary file in TAP format #
         #######################################################
-        if IsTAP ; then
-          echo "nok ok ${INDEX} - ${FILE}" >> "${TMPFILE}"
-          printf "  ---\n  message:[%s]\n  ..." "$LINT_CMD" >> "${TMPFILE}"
+        if IsTAP; then
+          echo "not ok ${INDEX} - ${FILE}" >>"${TMPFILE}"
+          #          LINT_CMD_TAB=$(echo "${LINT_CMD}" | sed -e 's|$|XXXEOL|g' -e's|"|\"|g' | tr '\n' ' ') # FIXME
+          LINT_CMD_TAB=$(echo "${LINT_CMD}" | sed -e 's|$|XXXEOL|g' -e's|"|\"|g' | tr '\n' ' ') # FIXME
+          printf "  ---\n  message: \"[%s]\"\n  ...\n" "$LINT_CMD_TAB" >>"${TMPFILE}"
         fi
 
       else
@@ -1942,8 +2052,8 @@ LintCodebase()
         #######################################################
         # Store the linting as a temporary file in TAP format #
         #######################################################
-        if IsTAP ; then
-          echo "ok ${INDEX} - ${FILE}" >> "${TMPFILE}"
+        if IsTAP; then
+          echo "ok ${INDEX} - ${FILE}" >>"${TMPFILE}"
         fi
       fi
     done
@@ -1951,23 +2061,31 @@ LintCodebase()
     #################################
     # Generate report in TAP format #
     #################################
-    if IsTAP && [ ${INDEX} -gt 0 ] ; then
-      printf "TAP version 13\n1..%s\n" "${INDEX}" > "${REPORT_OUTPUT_FILE}"
-      cat "${TMPFILE}" >> "${REPORT_OUTPUT_FILE}"
-    fi
+    if IsTAP && [ ${INDEX} -gt 0 ]; then
+      printf "TAP version 13\n# %s\n1..%s\n" "${FILE_TYPE}" "${INDEX}" >"${REPORT_OUTPUT_FILE}"
+      cat "${TMPFILE}" >>"${REPORT_OUTPUT_FILE}"
+      if IsXUNIT; then
+        mkdir -p "${XUNIT_OUTPUT_FOLDER}"
+          TEST_OUTPUT_FILE="${XUNIT_OUTPUT_FOLDER}/$(basename "$REPORT_OUTPUT_FILE").xml"
+          tap-xunit <"${REPORT_OUTPUT_FILE}" |
+            sed -E -e 's|XXXEOL|\r\n|g' -e 's|testcase name="#[[:digit:]]+ (\./)?|testcase name="|g' \
+              >"${TEST_OUTPUT_FILE}"
+#          cat "${TEST_OUTPUT_FILE}" # FIXME
+        fi
+#        cat "${REPORT_OUTPUT_FILE}" # FIXME
+      fi
   fi
 }
 ################################################################################
 #### Function TestCodebase #####################################################
-TestCodebase()
-{
+TestCodebase() {
   ####################
   # Pull in the vars #
   ####################
-  FILE_TYPE="$1"        # Pull the variable and remove from array path  (Example: JSON)
-  LINTER_NAME="$2"      # Pull the variable and remove from array path  (Example: jsonlint)
-  LINTER_COMMAND="$3"   # Pull the variable and remove from array path  (Example: jsonlint -c ConfigFile /path/to/file)
-  FILE_EXTENSIONS="$4"  # Pull the variable and remove from array path  (Example: *.json)
+  FILE_TYPE="$1"       # Pull the variable and remove from array path  (Example: JSON)
+  LINTER_NAME="$2"     # Pull the variable and remove from array path  (Example: jsonlint)
+  LINTER_COMMAND="$3"  # Pull the variable and remove from array path  (Example: jsonlint -c ConfigFile /path/to/file)
+  FILE_EXTENSIONS="$4" # Pull the variable and remove from array path  (Example: *.json)
 
   ################
   # print header #
@@ -2041,7 +2159,7 @@ TestCodebase()
     # Get the file pass status #
     ############################
     # Example: markdown_good_1.md -> good
-    FILE_STATUS=$(echo "$FILE_NAME" |cut -f2 -d'_')
+    FILE_STATUS=$(echo "$FILE_NAME" | cut -f2 -d'_')
 
     #########################################################
     # If not found, assume it should be linted successfully #
@@ -2131,6 +2249,7 @@ TestCodebase()
         echo "ERROR: Linter CMD:[$LINTER_COMMAND $FILE]"
         # Increment the error count
         (("ERRORS_FOUND_$FILE_TYPE++"))
+        (("TOTAL_ERRORS_FOUND++"))
       else
         ###########
         # Success #
@@ -2154,6 +2273,7 @@ TestCodebase()
         echo "ERROR: Linter CMD:[$LINTER_COMMAND $FILE]"
         # Increment the error count
         (("ERRORS_FOUND_$FILE_TYPE++"))
+        (("TOTAL_ERRORS_FOUND++"))
       else
         ###########
         # Success #
@@ -2165,8 +2285,7 @@ TestCodebase()
 }
 ################################################################################
 #### Function Footer ###########################################################
-Footer()
-{
+Footer() {
   echo ""
   echo "----------------------------------------------"
   echo "----------------------------------------------"
@@ -2175,14 +2294,12 @@ Footer()
   echo "----------------------------------------------"
   echo ""
 
-
   ###################################
   # Prints output report if enabled #
   ###################################
-  if [ -z "${FORMAT_REPORT}" ] ; then
+  if [[ -z "${FORMAT_REPORT}" ]]; then
     echo "Reports generated in folder ${REPORT_OUTPUT_FOLDER}"
   fi
-
   ##############################
   # Prints for errors if found #
   ##############################
@@ -2192,36 +2309,18 @@ Footer()
     # Build the error counter #
     ###########################
     ERROR_COUNTER="ERRORS_FOUND_$LANGUAGE"
-
     ##################
     # Print if not 0 #
     ##################
     if [ "${!ERROR_COUNTER}" -ne 0 ]; then
-      # Print the goods
-      echo "ERRORS FOUND in $LANGUAGE:[${!ERROR_COUNTER}]"
-      if [[ "$RUN_LOCAL" != "false" && "$BITBUCKET_CODENOTIFY" != "false" ]]; then
-
-        curl --request PUT "https://api.bitbucket.org/2.0/repositories/${BITBUCKET_REPO_FULL_NAME}/commit/${BITBUCKET_COMMIT}/reports/${LANGUAGE}-superlint" \
-          --header 'x-token-auth: $REPOSITORY_OAUTH_ACCESS_TOKEN' \
-          --header 'Content-Type: application/json' \
-          --data-raw '{
-	"title": "SuperLinter '"${LANGUAGE}"' scan report",
-	"details": "This pull request introduces '"${!ERROR_COUNTER}"' lint problems.",
-	"report_type": "BUG",
-	"reporter": "superlint",
-	"link": "http://www.mySystem.com/reports/001",
-	"result": "FAILED",
-	"data": [
-		{
-			"title": "Safe to merge?",
-			"type": "BOOLEAN",
-			"value": false
-		}
-	]
-}'
-      fi
+        # Print the goods
+        echo "ERRORS FOUND in $LANGUAGE:[${!ERROR_COUNTER}]"
     fi
   done
+  echo "ERRORS FOUND in TOTAL:[${TOTAL_ERRORS_FOUND}]"
+  if [[ "$RUN_LOCAL" == "false" && "$BITBUCKET_CODENOTIFY" != "false" ]]; then
+    bitbucket_report "${TOTAL_ERRORS_FOUND}"
+  fi
 
   ##################################
   # Exit with 0 if errors disabled #
@@ -2253,7 +2352,7 @@ Footer()
      [ "$ERRORS_FOUND_RUBY" -ne 0 ] || \
      [ "$ERRORS_FOUND_CSS" -ne 0 ] || \
      [ "$ERRORS_FOUND_ENV" -ne 0 ] || \
-     [ "$ERRORS_FOUND_KOTLIN" -ne 0 ]; then
+    [ "$ERRORS_FOUND_KOTLIN" -ne 0 ]; then
     # Failed exit
     echo "Exiting with errors found!"
     exit 1
@@ -2271,8 +2370,7 @@ Footer()
 }
 ################################################################################
 #### Function RunTestCases #####################################################
-RunTestCases()
-{
+RunTestCases() {
   # This loop will run the test cases and exclude user code
   # This is called from the automation process to validate new code
   # When a PR is opened, the new code is validated with the default branch
@@ -2325,9 +2423,17 @@ RunTestCases()
 }
 ################################################################################
 #### Function IsTap ############################################################
-IsTAP()
-{
-  if [ "${OUTPUT_FORMAT}" == "tap" ] ; then
+IsTAP() {
+  if [[ "${OUTPUT_FORMAT}" == "tap" ]] || [[ "${OUTPUT_FORMAT}" == "xunit" ]]; then
+    return 0
+  else
+    return 1
+  fi
+}
+################################################################################
+#### Function IsXUnit ############################################################
+IsXUNIT() {
+  if [[ "${OUTPUT_FORMAT}" == "xunit" ]]; then
     return 0
   else
     return 1
@@ -2345,8 +2451,8 @@ Header
 ##############################################################
 # check flag for validating the report folder does not exist #
 ##############################################################
-if [ -n "${OUTPUT_FORMAT}" ]; then
-  if [ -d "${REPORT_OUTPUT_FOLDER}" ] ; then
+if [[ -n "${OUTPUT_FORMAT}" ]]; then
+  if [[ -d "${REPORT_OUTPUT_FOLDER}" ]]; then
     echo "ERROR! Found ${REPORT_OUTPUT_FOLDER}"
     echo "Please remove the folder and try again."
     exit 1
