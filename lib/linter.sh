@@ -27,9 +27,6 @@ if [[ -n "${BITBUCKET_CLONE_DIR}" ]]; then
     }
   }
   }' >${GITHUB_EVENT_PATH}
-  encodeComponent() {
-    jq -aRs . <<<"$1"
-  }
   bitbucket_report() {
     ERROR_COUNTER=$1
     if [[ "$VALIDATE_ALL_CODEBASE" == "false" ]]; then
@@ -175,6 +172,7 @@ ACTIONS_RUNNER_DEBUG="${ACTIONS_RUNNER_DEBUG}"        # Boolean to see even more
 # Default Vars #
 ################
 DEFAULT_VALIDATE_ALL_CODEBASE='true'                  # Default value for validate all files
+DEFAULT_WORKSPACE="${DEFAULT_WORKSPACE-$BITBUCKET_CLONE_DIR}" # Default workspace if running locally
 DEFAULT_WORKSPACE="${DEFAULT_WORKSPACE:-/tmp/lint}"   # Default workspace if running locally
 DEFAULT_ANSIBLE_DIRECTORY="$GITHUB_WORKSPACE/ansible" # Default Ansible Directory
 DEFAULT_RUN_LOCAL='false'                             # Default value for debugging locally
@@ -184,6 +182,7 @@ RAW_FILE_ARRAY=()                                     # Array of all files that 
 READ_ONLY_CHANGE_FLAG=0                               # Flag set to 1 if files changed are not txt or md
 TEST_CASE_FOLDER='.automation/test'                   # Folder for test cases we should always ignore
 DEFAULT_DISABLE_ERRORS='false'                        # Default to enabling errors
+DEFAULT_BITBUCKET_CODENOTIFY='false'                  # not bitbucket
 
 ##############
 # Format     #
@@ -192,6 +191,9 @@ OUTPUT_FORMAT="${OUTPUT_FORMAT}"                      # Output format to be gene
 OUTPUT_FOLDER="${OUTPUT_FOLDER:-super-linter.report}" # Folder where the reports are generated. Default super-linter.report
 REPORT_OUTPUT_FOLDER="${DEFAULT_WORKSPACE}/${OUTPUT_FOLDER}"
 XUNIT_OUTPUT_FOLDER="${DEFAULT_WORKSPACE}/${OUTPUT_FOLDER}/test-reports"
+encodeComponent() {
+  jq -aRs . <<<"$1"
+}
 
 ##########################
 # Array of changed files #
