@@ -246,9 +246,6 @@ ERRORS_FOUND_CSS=0                 # Count of errors found
 ERRORS_FOUND_ENV=0                 # Count of errors found
 ERRORS_FOUND_KOTLIN=0              # Count of errors found
 TOTAL_ERRORS_FOUND=0
-if [[ "$RUN_LOCAL" == "false" && "$BITBUCKET_CODENOTIFY" != "false" ]]; then
-  bitbucket_report 0
-fi
 
 
 ################################################################################
@@ -2006,8 +2003,12 @@ LintCodebase() {
         echo "To locally re-execute run the following:"
         echo "docker run -v \$PWD/$(dirname "${FILE}"):/tmp/lint -e RUN_LOCAL=true -eVALIDATE_${FILE_TYPE}=true  --rm -it jlongman/super-linter:stable"
         echo "ERROR:[$LINT_CMD]"
-        DETAILS=$(encodeComponent "${LINT_CMD}"| sed -e 's|\n|<br />\n|g') # note already quoted
+        # Increment the error count
+        (("ERRORS_FOUND_$FILE_TYPE++"))
+        (("TOTAL_ERRORS_FOUND++"))
+
         if [[ "$RUN_LOCAL" == "false" && "$BITBUCKET_CODENOTIFY" != "false" ]]; then
+          DETAILS=$(encodeComponent "${LINT_CMD}"| sed -e 's|\n|<br />\n|g') # note already quoted
           data='{
             "title": "'"${LINTER_NAME} - ${TOTAL_ERRORS_FOUND}/${#LIST_FILES[@]} - ${FILE_TYPE}"'",
             "summary": "'"${LINTER_NAME}"' detected a problem",
@@ -2023,8 +2024,9 @@ LintCodebase() {
               }
             ]
           }'
-          echo "$data"                      #FIXME
-          echo "totes: $TOTAL_ERRORS_FOUND" # FIXME
+#          echo "$data"                      #FIXME
+#          echo "totes: $TOTAL_ERRORS_FOUND" # FIXME
+          bitbucket_report "$TOTAL_ERRORS_FOUND"
           curl -s \
             --proxy 'http://host.docker.internal:29418' \
             --request PUT \
@@ -2032,9 +2034,7 @@ LintCodebase() {
             --header 'Content-Type: application/json' \
             --data-raw "${data}"
         fi
-        # Increment the error count
-        (("ERRORS_FOUND_$FILE_TYPE++"))
-        (("TOTAL_ERRORS_FOUND++"))
+
         #######################################################
         # Store the linting as a temporary file in TAP format #
         #######################################################
@@ -2467,6 +2467,11 @@ fi
 # Need to pull in all the GitHub variables
 # needed to connect back and update checks
 GetGitHubVars
+
+# we need default_run_local applied
+if [[ "$RUN_LOCAL" == "false" && "$BITBUCKET_CODENOTIFY" != "false" ]]; then
+  bitbucket_report 0
+fi
 
 #########################################
 # Get the languages we need to validate #
