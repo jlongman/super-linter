@@ -35,7 +35,7 @@ CheckGHEPid()
     ################################################
     if [ ! -f "$GHE_CONFIG_PID" ]; then
       # File not found
-      echo "Were good to move forward, no .pid file found at:[$GHE_CONFIG_PID]"
+      echo "We're good to move forward, no .pid file found at:[$GHE_CONFIG_PID]"
     else
       # Found the pid running, need to sleep
       echo "Current PID found, sleeping $SLEEP_SECONDS seconds before next check..."
@@ -87,8 +87,7 @@ CheckGHEProcess()
     ####################################################
     # Check to see if the process is alive and running #
     ####################################################
-    # shellcheck disable=SC2009
-    CHECK_PROCESS_CMD=$(ps -aef |grep "$GHE_APPLY_COMMAND" |grep -v grep 2>&1)
+    CHECK_PROCESS_CMD=$(pgrep -f "$GHE_APPLY_COMMAND" 2>&1)
 
     #######################
     # Load the error code #
@@ -189,10 +188,10 @@ CheckGHEProcess
 ####################
 RunConfigApply
 
-##########################################
-# Were going to run it again after a nap #
-# to make sure there is no crazy actions #
-##########################################
+###########################################
+# We're going to run it again after a nap #
+# to make sure there is no crazy actions  #
+###########################################
 sleep 300s
 
 ######################

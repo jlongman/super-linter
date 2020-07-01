@@ -7,7 +7,7 @@
 ##################
 # Get base image #
 ##################
-FROM github/super-linter:v2.2.2
+FROM github/super-linter:v3.1.1
 RUN npm -g --no-cache install \
     tap-xunit@2.4.1 && \
     pip install --no-cache-dir \
@@ -44,8 +44,11 @@ ENV GITHUB_SHA=${GITHUB_SHA} \
     VALIDATE_TERRAFORM=${VALIDATE_TERRAFORM} \
     VALIDATE_CSS=${VALIDATE_CSS} \
     VALIDATE_ENV=${VALIDATE_ENV} \
+    VALIDATE_CLOJURE=${VALIDATE_CLOJURE} \
     VALIDATE_KOTLIN=${VALIDATE_KOTLIN} \
     VALIDATE_POWERSHELL=${VALIDATE_POWERSHELL} \
+    VALIDATE_OPENAPI=${VALIDATE_OPENAPI} \
+    VALIDATE_PROTOBUF=${VALIDATE_PROTOBUF} \
     ANSIBLE_DIRECTORY=${ANSIBLE_DIRECTORY} \
     RUN_LOCAL=${RUN_LOCAL} \
     TEST_CASE_RUN=${TEST_CASE_RUN} \
