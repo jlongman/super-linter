@@ -16,8 +16,7 @@ The end goal of this tool:
 - [Environment variables](#environment-variables)
 - [Disable rules](#disabling-rules)
 - [Docker Hub](#docker-hub)
-- [Run Super-Linter locally](#running-super-linter-locally-troubleshootingdebuggingenhancements)
-  - [CI / CT/ CD](#cictcd)
+- [Run Super-Linter outside GitHub Actions](#run-super-linter-outside-github-actions)
 - [Limitations](#limitations)
 - [Contributing](#how-to-contribute)
 
@@ -34,13 +33,17 @@ Developers on **GitHub** can call the **GitHub Action** to lint their code base 
 | *Language*       | *Linter*                                                                 |
 | ---              | ---                                                                      |
 | **Ansible**      | [ansible-lint](https://github.com/ansible/ansible-lint)                  |
+| **Azure Resource Manager (ARM)** | [arm-ttk](https://github.com/azure/arm-ttk)                  |
 | **AWS CloudFormation templates** | [cfn-lint](https://github.com/aws-cloudformation/cfn-python-lint/) |
 | **CSS**          | [stylelint](https://stylelint.io/)                                       |
 | **Clojure**      | [clj-kondo](https://github.com/borkdude/clj-kondo)                       |
 | **CoffeeScript** | [coffeelint](https://coffeelint.github.io/)                              |
+| **Dart**         | [dartanalyzer](https://dart.dev/guides/language/analysis-options)                      |
 | **Dockerfile**   | [dockerfilelint](https://github.com/replicatedhq/dockerfilelint.git)     |
+| **EDITORCONFIG**          | [editorconfig-checker](https://github.com/editorconfig-checker/editorconfig-checker) |
 | **ENV**          | [dotenv-linter](https://github.com/dotenv-linter/dotenv-linter)          |
 | **Golang**       | [golangci-lint](https://github.com/golangci/golangci-lint)               |
+| **HTMLHint**     | [HTMLHint](https://github.com/htmlhint/HTMLHint)                      |
 | **JavaScript**   | [eslint](https://eslint.org/) [standard js](https://standardjs.com/)     |
 | **JSON**         | [jsonlint](https://github.com/zaach/jsonlint)                            |
 | **Kotlin**       | [ktlint](https://github.com/pinterest/ktlint)                            |
@@ -51,6 +54,7 @@ Developers on **GitHub** can call the **GitHub Action** to lint their code base 
 | **PowerShell**   | [PSScriptAnalyzer](https://github.com/PowerShell/Psscriptanalyzer)       |
 | **Protocol Buffers** | [protolint](https://github.com/yoheimuta/protolint)                  |
 | **Python3**      | [pylint](https://www.pylint.org/)                                        |
+| **Raku**         | [raku](https://raku.org)                                                 |
 | **Ruby**         | [RuboCop](https://github.com/rubocop-hq/rubocop)                         |
 | **Shell**        | [Shellcheck](https://github.com/koalaman/shellcheck)                     |
 | **Terraform**    | [tflint](https://github.com/terraform-linters/tflint)                    |
@@ -59,7 +63,7 @@ Developers on **GitHub** can call the **GitHub Action** to lint their code base 
 | **YAML**         | [YamlLint](https://github.com/adrienverge/yamllint)                      |
 
 ## How to use
-<img height="512" src="https://github.com/github/super-linter/blob/quickstart/docs/how-to.gif?raw=true" alt="How to gif">
+More in-depth [tutorial](https://www.youtube.com/watch?v=EDAmFKO4Zt0&t=118s) available
 
 To use this **GitHub** Action you will need to complete the following:
 1. Create a new file in your repository called `.github/workflows/linter.yml`
@@ -95,8 +99,10 @@ name: Lint Code Base
 #############################
 on:
   push:
-    branches-ignore:
-      - 'master'
+    branches-ignore: [master]
+    # Remove the line above to run when pushing to master
+  pull_request:
+    branches: [master]
 
 ###############
 # Set the Job #
@@ -125,11 +131,12 @@ jobs:
         uses: docker://github/super-linter:v3
         env:
           VALIDATE_ALL_CODEBASE: false
-          VALIDATE_ANSIBLE: false
+          DEFAULT_BRANCH: master
+
 ...
 ```
 
-**NOTE:**  
+**NOTE:**
 Using the line:`uses: docker://github/super-linter:v3` will pull the image down from **DockerHub** and run the **GitHub Super-Linter**.   Using the line: `uses: github/super-linter@v3` will build and compile the **GitHub Super-Linter** at build time. *This can be far more costly in time...*
 
 ## Environment variables
@@ -153,6 +160,7 @@ and won't run anything unexpected.
 | **VALIDATE_MD** | `true` | Flag to enable or disable the linting process of the language. |
 | **VALIDATE_BASH** | `true` | Flag to enable or disable the linting process of the language. |
 | **VALIDATE_PERL** | `true` | Flag to enable or disable the linting process of the language. |
+| **VALIDATE_RAKU** | `true` | Flag to enable or disable the linting process of the language. |
 | **VALIDATE_PHP** | `true` | Flag to enable or disable the linting process of the language. |
 | **VALIDATE_PYTHON** | `true` | Flag to enable or disable the linting process of the language. |
 | **VALIDATE_RUBY** | `true` | Flag to enable or disable the linting process of the language. |
@@ -162,26 +170,34 @@ and won't run anything unexpected.
 | **VALIDATE_JAVASCRIPT_ES** | `true` | Flag to enable or disable the linting process of the language. (Utilizing: eslint) |
 | **JAVASCRIPT_ES_CONFIG_FILE** | `.eslintrc.yml` | Filename for [eslint configuration](https://eslint.org/docs/user-guide/configuring#configuration-file-formats) (ex: `.eslintrc.yml`, `.eslintrc.json`)|
 | **VALIDATE_JAVASCRIPT_STANDARD** | `true` | Flag to enable or disable the linting process of the language. (Utilizing: standard) |
+| **VALIDATE_JSX** | `true` | Flag to enable or disable the linting process for jsx files (Utilizing: eslint) |
+| **VALIDATE_TSX** | `true` | Flag to enable or disable the linting process for tsx files (Utilizing: eslint) |
 | **VALIDATE_TYPESCRIPT_ES** | `true` | Flag to enable or disable the linting process of the language. (Utilizing: eslint) |
 | **TYPESCRIPT_ES_CONFIG_FILE** | `.eslintrc.yml` | Filename for [eslint configuration](https://eslint.org/docs/user-guide/configuring#configuration-file-formats) (ex: `.eslintrc.yml`, `.eslintrc.json`)|
 | **VALIDATE_TYPESCRIPT_STANDARD** | `true` | Flag to enable or disable the linting process of the language. (Utilizing: standard) |
 | **VALIDATE_DOCKER** | `true` | Flag to enable or disable the linting process of the language. |
 | **VALIDATE_GO** | `true` | Flag to enable or disable the linting process of the language. |
 | **VALIDATE_POWERSHELL** | `true` | Flag to enable or disable the linting process of the language. |
+| **VALIDATE_ARM** | `true` | Flag to enable or disable the linting process of the language. |
 | **VALIDATE_TERRAFORM** | `true` | Flag to enable or disable the linting process of the language. |
 | **VALIDATE_CSS** | `true` | Flag to enable or disable the linting process of the language. |
 | **VALIDATE_ENV** | `true` | Flag to enable or disable the linting process of the language. |
 | **VALIDATE_CLOJURE** | `true` | Flag to enable or disable the linting process of the language. |
+| **VALIDATE_HTML** | `true` | Flag to enable or disable the linting process of the language. |
 | **VALIDATE_KOTLIN** | `true` | Flag to enable or disable the linting process of the language. |
+| **VALIDATE_DART** | `true` | Flag to enable or disable the linting process of the language. |
 | **VALIDATE_OPENAPI** | `true` | Flag to enable or disable the linting process of the language. |
 | **VALIDATE_CLOUDFORMATION** | `true` | Flag to enable or disable the linting process of the language. |
 | **VALIDATE_PROTOBUF** | `true` | Flag to enable or disable the linting process of the language. |
+| **VALIDATE_EDITORCONFIG** | `true` | Flag to enable or disable the linting process with the editorconfig. |
 | **ANSIBLE_DIRECTORY** | `/ansible` | Flag to set the root directory for Ansible file location(s). |
 | **ACTIONS_RUNNER_DEBUG** | `false` | Flag to enable additional information about the linter, versions, and additional output. |
 | **DISABLE_ERRORS** | `false` | Flag to have the linter complete with exit code 0 even if errors were detected. |
 | **DEFAULT_WORKSPACE** | `/tmp/lint` | The location containing files to lint if you are running locally. |
-| **OUTPUT_FORMAT** | `` | The report format to be generated, besides the stdout one. Supported formats: tap |
-| **OUTPUT_FOLDER** | `super-linter.report` | The location where the output reporting will be generated to. |
+| **OUTPUT_FORMAT**  | `none` | The report format to be generated, besides the stdout one. Output format of tap is currently using v13 of the specification. Supported formats: tap |
+| **OUTPUT_FOLDER**  | `super-linter.report` | The location where the output reporting will be generated to. Output folder must not previously exist. |
+| **OUTPUT_DETAILS** | `simpler` |  What level of details to be reported. Supported formats: simpler or detailed. |
+
 
 ### Template rules files
 You can use the **GitHub** **Super-Linter** *with* or *without* your own personal rules sets. This allows for greater flexibility for each individual code base. The Template rules all try to follow the standards we believe should be enabled at the basic level.
@@ -194,19 +210,23 @@ If you need to disable certain *rules* and *functionality*, you can view [Disabl
 ## Docker Hub
 The **Docker** container that is built from this repository is located at `https://hub.docker.com/r/github/super-linter`
 
-## Running Super-Linter locally (troubleshooting/debugging/enhancements)
+## Run Super-Linter outside GitHub Actions
+### Local (troubleshooting/debugging/enhancements)
 If you find that you need to run super-linter locally, you can follow the documentation at [Running super-linter locally](https://github.com/github/super-linter/blob/master/docs/run-linter-locally.md)
 
 Check out the [note](#how-it-works) in **How it Works** to understand more about the **Super-Linter** linting locally versus via continuous integration.
 
-### CI/CT/CD
-The **Super-Linter** has *CI/CT/CD* configured utilizing **GitHub** Actions.
-- When a branch is created and code is pushed, a **GitHub** Action is triggered for building the new **Docker** container with the new codebase
-- The **Docker** container is then ran against the *test cases* to validate all code sanity
-  - `.automation/test` contains all test cases for each language that should be validated
-- These **GitHub** Actions utilize the Checks API and Protected Branches to help follow the SDLC
-- When the Pull Request is merged to master, the **Super-Linter** **Docker** container is then updated and deployed with the new codebase
-  - **Note:** The branch's **Docker** container is also removed from **DockerHub** to cleanup after itself
+### Azure
+Check out this [article](http://blog.tyang.org/2020/06/27/use-github-super-linter-in-azure-pipelines/)
+
+### GitLab
+Check out this [snippet](https://gitlab.com/snippets/1988376)
+
+### Visual Studio Code
+You can checkout this repository using [Container Remote Development](https://code.visualstudio.com/docs/remote/containers), and debug the linter using the `Test Linter` task.
+![Example](https://user-images.githubusercontent.com/15258962/85165778-2d2ce700-b21b-11ea-803e-3f6709d8e609.gif)
+
+We will also support [Github Codespaces](https://github.com/features/codespaces/) once it becomes available
 
 ## Limitations
 Below are a list of the known limitations for the **GitHub Super-Linter**:
@@ -216,12 +236,6 @@ Below are a list of the known limitations for the **GitHub Super-Linter**:
 
 ## How to contribute
 If you would like to help contribute to this **GitHub** Action, please see [CONTRIBUTING](https://github.com/github/super-linter/blob/master/.github/CONTRIBUTING.md)
-
-### Visual Studio Code
-You can checkout this repository using [Container Remote Development](https://code.visualstudio.com/docs/remote/containers), and debug the linter using the `Test Linter` task.
-![Example](https://user-images.githubusercontent.com/15258962/85165778-2d2ce700-b21b-11ea-803e-3f6709d8e609.gif)
-
-We will also support [Github Codespaces](https://github.com/features/codespaces/) once it becomes available
 
 --------------------------------------------------------------------------------
 

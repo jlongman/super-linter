@@ -12,8 +12,7 @@ source /action/lib/tap.sh   # Source the function script(s)
 ################################################################################
 ################################################################################
 #### Function LintCodebase #####################################################
-function LintCodebase()
-{
+function LintCodebase() {
   ####################
   # Pull in the vars #
   ####################
@@ -38,9 +37,9 @@ function LintCodebase()
   PRINT_ARRAY+=("----------------------------------------------")
   PRINT_ARRAY+=("----------------------------------------------")
 
-  #######################################
-  # Validate we have jsonlint installed #
-  #######################################
+  #####################################
+  # Validate we have linter installed #
+  #####################################
   VALIDATE_INSTALL_CMD=$(command -v "$LINTER_NAME" 2>&1)
 
   #######################
@@ -53,14 +52,13 @@ function LintCodebase()
   ##############################
   if [ $ERROR_CODE -ne 0 ]; then
     # Failed
-    echo "ERROR! Failed to find [$LINTER_NAME] in system!"
-    echo "ERROR:[$VALIDATE_INSTALL_CMD]"
+    echo -e "${NC}${B[R]}${F[W]}ERROR!${NC} Failed to find [$LINTER_NAME] in system!${NC}"
+    echo -e "${NC}${B[R]}${F[W]}ERROR:${NC}[$VALIDATE_INSTALL_CMD]${NC}"
     exit 1
   else
     # Success
-    if [[ "$ACTIONS_RUNNER_DEBUG" == "true" ]]; then
-      echo "Successfully found binary in system"
-      echo "Location:[$VALIDATE_INSTALL_CMD]"
+    if [[ $ACTIONS_RUNNER_DEBUG == "true" ]]; then
+      echo -e "${NC}${F[B]}Successfully found binary for ${F[W]}[$LINTER_NAME]${F[B]} in system location: ${F[W]}[$VALIDATE_INSTALL_CMD]${NC}"
     fi
   fi
 
@@ -122,18 +120,17 @@ function LintCodebase()
     ######################
     # Print Header array #
     ######################
-    for LINE in "${PRINT_ARRAY[@]}"
-    do
+    for LINE in "${PRINT_ARRAY[@]}"; do
       #########################
       # Print the header info #
       #########################
       echo "$LINE"
     done
 
-    ####################################
-    # Prepare context if OUTPUT_FORMAT #
-    ####################################
-    if IsTAP; then
+    ########################################
+    # Prepare context if TAP format output #
+    ########################################
+    if IsTAP ; then
       TMPFILE=$(mktemp -q "/tmp/super-linter-${FILE_TYPE}.XXXXXX")
       INDEX=0
       mkdir -p "${REPORT_OUTPUT_FOLDER}"
@@ -143,8 +140,7 @@ function LintCodebase()
     ##################
     # Lint the files #
     ##################
-    for FILE in "${LIST_FILES[@]}"
-    do
+    for FILE in "${LIST_FILES[@]}"; do
       #####################
       # Get the file name #
       #####################
@@ -158,6 +154,9 @@ function LintCodebase()
         continue
       elif [[ $FILE == *"$TEST_CASE_FOLDER"* ]]; then
         # This is the test cases, we should always skip
+        continue
+      elif [[ $FILE == *".git"* ]]; then
+        # This is likely the .git folder and shouldnt be parsed
         continue
       fi
 
@@ -177,20 +176,29 @@ function LintCodebase()
       ####################
       LINT_CMD=''
 
-      #######################################
-      # Corner case for Powershell subshell #
-      #######################################
-      if [[ "$FILE_TYPE" == "POWERSHELL" ]]; then
+      ####################################
+      # Corner case for pwsh subshell    #
+      #  - PowerShell (PSScriptAnalyzer) #
+      #  - ARM        (arm-ttk)          #
+      ####################################
+      if [[ $FILE_TYPE == "POWERSHELL" ]] || [[ $FILE_TYPE == "ARM" ]]; then
         ################################
         # Lint the file with the rules #
         ################################
-        # Need to append "'" to make the pwsh call syntax correct, also exit with exit code from inner subshell
-        LINT_CMD=$(cd "$GITHUB_WORKSPACE" || exit; $LINTER_COMMAND "$FILE"; exit $? 2>&1)
+        # Need to run PowerShell commands using pwsh -c, also exit with exit code from inner subshell
+        LINT_CMD=$(
+          cd "$GITHUB_WORKSPACE" || exit
+          pwsh -NoProfile -NoLogo -Command "$LINTER_COMMAND $FILE; if (\$Error.Count) { exit 1 }"
+          exit $? 2>&1
+        )
       else
         ################################
         # Lint the file with the rules #
         ################################
-        LINT_CMD=$(cd "$GITHUB_WORKSPACE" || exit; $LINTER_COMMAND "$FILE" 2>&1)
+        LINT_CMD=$(
+          cd "$GITHUB_WORKSPACE" || exit
+          $LINTER_COMMAND "$FILE" 2>&1
+        )
       fi
       ERROR_CODE=$?
       FILE=$(echo "${FILE}"| sed -e "s|${GITHUB_WORKSPACE}|.|")
@@ -205,11 +213,11 @@ function LintCodebase()
         #########
         # Error #
         #########
-        echo "ERROR! Found errors in [$LINTER_NAME] linter!"
+        echo -e "${NC}${B[R]}${F[W]}ERROR!${NC} Found errors in [$LINTER_NAME] linter!${NC}"
+
         echo "To locally re-execute run the following:"
-#        echo "docker run -v \$PWD$(dirname "${FILE}" | sed -e 's|/tmp/lint||'):/tmp/lint -e RUN_LOCAL=true -eVALIDATE_${FILE_TYPE}=true  --rm -it jlongman/super-linter:stable"
         echo "docker run -v \$PWD$(dirname "${FILE}"):/tmp/lint -e RUN_LOCAL=true -eVALIDATE_${FILE_TYPE}=true  --rm -it jlongman/super-linter:stable"
-        echo "ERROR:[$LINT_CMD]"
+        echo -e "${NC}${B[R]}${F[W]}ERROR:${NC}[$LINT_CMD]${NC}"
         # Increment the error count
         (("ERRORS_FOUND_$FILE_TYPE++"))
         (("TOTAL_ERRORS_FOUND++"))
@@ -222,29 +230,27 @@ function LintCodebase()
         #######################################################
         # Store the linting as a temporary file in TAP format #
         #######################################################
-        if IsTAP; then
-          echo "not ok ${INDEX} - ${FILE}" >>"${TMPFILE}"
-          #          LINT_CMD_TAB=$(echo "${LINT_CMD}" | sed -e 's|$|XXXEOL|g' -e's|"|\"|g' | tr '\n' ' ') # FIXME
-#          LINT_CMD_TAB=$(echo "${LINT_CMD}" | sed -e 's|$|XXXEOL|g' -e's|"|\"|g' | tr '\n' ' ') # FIXME
-#          printf "  ---\n  message: \"[%s]\"\n  ...\n" "$LINT_CMD_TAB" >>"${TMPFILE}"
+        if IsTAP ; then
+          echo "not ok ${INDEX} - ${FILE}" >> "${TMPFILE}"
+          ##########################################
+          # Report the detailed message if enabled #
+          ##########################################
           DETAILED_MSG=$(TransformTAPDetails "$LINT_CMD")
-          echo "$DETAILED_MSG"
           if [ -n "${DETAILED_MSG}" ] ; then
-            printf "  ---\n  message: %s\n  ..." "$DETAILED_MSG" >> "${TMPFILE}"
+            printf "  ---\n  message: %s\n  ...\n" "$DETAILED_MSG" >> "${TMPFILE}"
           fi
         fi
-
       else
         ###########
         # Success #
         ###########
-        echo " - File:[$FILE_NAME] was linted with [$LINTER_NAME] successfully"
+        echo -e "${NC}${F[B]} - File:${F[W]}[$FILE_NAME]${F[B]} was linted with ${F[W]}[$LINTER_NAME]${F[B]} successfully${NC}"
 
         #######################################################
         # Store the linting as a temporary file in TAP format #
         #######################################################
-        if IsTAP; then
-          echo "ok ${INDEX} - ${FILE}" >>"${TMPFILE}"
+        if IsTAP ; then
+          echo "ok ${INDEX} - ${FILE}" >> "${TMPFILE}"
         fi
       fi
     done
@@ -252,9 +258,9 @@ function LintCodebase()
     #################################
     # Generate report in TAP format #
     #################################
-    if IsTAP && [ ${INDEX} -gt 0 ]; then
-      printf "TAP version 13\n# %s\n1..%s\n" "${FILE_TYPE}" "${INDEX}" >"${REPORT_OUTPUT_FILE}"
-      cat "${TMPFILE}" >>"${REPORT_OUTPUT_FILE}"
+    if IsTAP && [ ${INDEX} -gt 0 ] ; then
+      printf "TAP version 13\n1..%s\n" "${FILE_TYPE}" "${INDEX}" > "${REPORT_OUTPUT_FILE}"
+      cat "${TMPFILE}" >> "${REPORT_OUTPUT_FILE}"
       if IsXUNIT; then
         mkdir -p "${XUNIT_OUTPUT_FOLDER}"
           TEST_OUTPUT_FILE="${XUNIT_OUTPUT_FOLDER}/$(basename "$REPORT_OUTPUT_FILE").xml"
@@ -265,21 +271,21 @@ function LintCodebase()
         fi
         cat "${REPORT_OUTPUT_FILE}" # FIXME
       fi
+    fi
   fi
 }
 ################################################################################
 #### Function TestCodebase #####################################################
-function TestCodebase()
-{
+function TestCodebase() {
   ####################
   # Pull in the vars #
   ####################
-  FILE_TYPE="$1"              # Pull the variable and remove from array path  (Example: JSON)
-  LINTER_NAME="$2"            # Pull the variable and remove from array path  (Example: jsonlint)
-  LINTER_COMMAND="$3"         # Pull the variable and remove from array path  (Example: jsonlint -c ConfigFile /path/to/file)
-  FILE_EXTENSIONS="$4"        # Pull the variable and remove from array path  (Example: *.json)
-  INDVIDUAL_TEST_FOLDER="$5"  # Folder for specific tests
-  TESTS_RAN=0                 # Incremented when tests are ran, this will help find failed finds
+  FILE_TYPE="$1"             # Pull the variable and remove from array path  (Example: JSON)
+  LINTER_NAME="$2"           # Pull the variable and remove from array path  (Example: jsonlint)
+  LINTER_COMMAND="$3"        # Pull the variable and remove from array path  (Example: jsonlint -c ConfigFile /path/to/file)
+  FILE_EXTENSIONS="$4"       # Pull the variable and remove from array path  (Example: *.json)
+  INDVIDUAL_TEST_FOLDER="$5" # Folder for specific tests
+  TESTS_RAN=0                # Incremented when tests are ran, this will help find failed finds
 
   ################
   # print header #
@@ -307,13 +313,12 @@ function TestCodebase()
   ##############################
   if [ $ERROR_CODE -ne 0 ]; then
     # Failed
-    echo "ERROR! Failed to find [$LINTER_NAME] in system!"
-    echo "ERROR:[$VALIDATE_INSTALL_CMD]"
+    echo -e "${NC}${B[R]}${F[W]}ERROR!${NC} Failed to find [$LINTER_NAME] in system!${NC}"
+    echo -e "${NC}${B[R]}${F[W]}ERROR:${NC}[$VALIDATE_INSTALL_CMD]${NC}"
     exit 1
   else
     # Success
-    echo "Successfully found binary in system"
-    echo "Location:[$VALIDATE_INSTALL_CMD]"
+    echo -e "${NC}${F[B]}Successfully found binary for ${F[W]}[$LINTER_NAME]${F[B]} in system location: ${F[W]}[$VALIDATE_INSTALL_CMD]${NC}"
   fi
 
   ##########################
@@ -329,8 +334,7 @@ function TestCodebase()
   ##################
   # Lint the files #
   ##################
-  for FILE in "${LIST_FILES[@]}"
-  do
+  for FILE in "${LIST_FILES[@]}"; do
     #####################
     # Get the file name #
     #####################
@@ -340,12 +344,12 @@ function TestCodebase()
     # Get the file pass status #
     ############################
     # Example: markdown_good_1.md -> good
-    FILE_STATUS=$(echo "$FILE_NAME" |cut -f2 -d'_')
+    FILE_STATUS=$(echo "$FILE_NAME" | cut -f2 -d'_')
 
     #########################################################
     # If not found, assume it should be linted successfully #
     #########################################################
-    if [ -z "$FILE_STATUS" ] || [[ "$FILE" == *"README"* ]]; then
+    if [ -z "$FILE_STATUS" ] || [[ $FILE == *"README"* ]]; then
       ##################################
       # Set to good for proper linting #
       ##################################
@@ -366,8 +370,8 @@ function TestCodebase()
     #######################################
     # Check if docker and get folder name #
     #######################################
-    if [[ "$FILE_TYPE" == "DOCKER" ]]; then
-      if [[ "$FILE" == *"good"* ]]; then
+    if [[ $FILE_TYPE == "DOCKER" ]]; then
+      if [[ $FILE == *"good"* ]]; then
         #############
         # Good file #
         #############
@@ -383,7 +387,7 @@ function TestCodebase()
     #####################
     # Check for ansible #
     #####################
-    if [[ "$FILE_TYPE" == "ANSIBLE" ]]; then
+    if [[ $FILE_TYPE == "ANSIBLE" ]]; then
       ########################################
       # Make sure we dont lint certain files #
       ########################################
@@ -395,18 +399,28 @@ function TestCodebase()
       ################################
       # Lint the file with the rules #
       ################################
-      LINT_CMD=$(cd "$GITHUB_WORKSPACE/$TEST_CASE_FOLDER/$INDVIDUAL_TEST_FOLDER" || exit; $LINTER_COMMAND "$FILE" 2>&1)
-    elif [[ "$FILE_TYPE" == "POWERSHELL" ]]; then
+      LINT_CMD=$(
+        cd "$GITHUB_WORKSPACE/$TEST_CASE_FOLDER/$INDVIDUAL_TEST_FOLDER" || exit
+        $LINTER_COMMAND "$FILE" 2>&1
+      )
+    elif [[ $FILE_TYPE == "POWERSHELL" ]] || [[ $FILE_TYPE == "ARM" ]]; then
       ################################
       # Lint the file with the rules #
       ################################
-      # Need to append "'" to make the pwsh call syntax correct, also exit with exit code from inner subshell
-      LINT_CMD=$(cd "$GITHUB_WORKSPACE/$TEST_CASE_FOLDER" || exit; $LINTER_COMMAND "$FILE"; exit $? 2>&1)
+      # Need to run PowerShell commands using pwsh -c, also exit with exit code from inner subshell
+      LINT_CMD=$(
+        cd "$GITHUB_WORKSPACE/$TEST_CASE_FOLDER" || exit
+        pwsh -NoProfile -NoLogo -Command "$LINTER_COMMAND $FILE; if (\$Error.Count) { exit 1 }"
+        exit $? 2>&1
+      )
     else
       ################################
       # Lint the file with the rules #
       ################################
-      LINT_CMD=$(cd "$GITHUB_WORKSPACE/$TEST_CASE_FOLDER" || exit; $LINTER_COMMAND "$FILE" 2>&1)
+      LINT_CMD=$(
+        cd "$GITHUB_WORKSPACE/$TEST_CASE_FOLDER" || exit
+        $LINTER_COMMAND "$FILE" 2>&1
+      )
     fi
 
     #######################
@@ -417,7 +431,7 @@ function TestCodebase()
     ########################################
     # Check for if it was supposed to pass #
     ########################################
-    if [[ "$FILE_STATUS" == "good" ]]; then
+    if [[ $FILE_STATUS == "good" ]]; then
       ##############################
       # Check the shell for errors #
       ##############################
@@ -425,9 +439,9 @@ function TestCodebase()
         #########
         # Error #
         #########
-        echo "ERROR! Found errors in [$LINTER_NAME] linter!"
-        echo "ERROR:[$LINT_CMD]"
-        echo "ERROR: Linter CMD:[$LINTER_COMMAND $FILE]"
+        echo -e "${NC}${B[R]}${F[W]}ERROR!${NC} Found errors in [$LINTER_NAME] linter!${NC}"
+        echo -e "${NC}${B[R]}${F[W]}ERROR:${NC}[$LINT_CMD]${NC}"
+        echo -e "${NC}${B[R]}${F[W]}ERROR:${NC} Linter CMD:[$LINTER_COMMAND $FILE]${NC}"
         # Increment the error count
         (("ERRORS_FOUND_$FILE_TYPE++"))
         # Increment counter that check was ran
@@ -436,7 +450,7 @@ function TestCodebase()
         ###########
         # Success #
         ###########
-        echo " - File:[$FILE_NAME] was linted with [$LINTER_NAME] successfully"
+        echo -e "${NC}${F[B]} - File:${F[W]}[$FILE_NAME]${F[B]} was linted with ${F[W]}[$LINTER_NAME]${F[B]} successfully${NC}"
         # Increment counter that check was ran
         ((TESTS_RAN++))
       fi
@@ -451,10 +465,10 @@ function TestCodebase()
         #########
         # Error #
         #########
-        echo "ERROR! Found errors in [$LINTER_NAME] linter!"
-        echo "ERROR! This file should have failed test case!"
-        echo "ERROR:[$LINT_CMD]"
-        echo "ERROR: Linter CMD:[$LINTER_COMMAND $FILE]"
+        echo -e "${NC}${B[R]}${F[W]}ERROR!${NC} Found errors in [$LINTER_NAME] linter!${NC}"
+        echo -e "${NC}${B[R]}${F[W]}ERROR!${NC} This file should have failed test case!${NC}"
+        echo -e "${NC}${B[R]}${F[W]}ERROR:${NC}[$LINT_CMD]${NC}"
+        echo -e "${NC}${B[R]}${F[W]}ERROR:${NC} Linter CMD:[$LINTER_COMMAND $FILE]${NC}"
         # Increment the error count
         (("ERRORS_FOUND_$FILE_TYPE++"))
         # Increment counter that check was ran
@@ -463,7 +477,7 @@ function TestCodebase()
         ###########
         # Success #
         ###########
-        echo " - File:[$FILE_NAME] failed test case with [$LINTER_NAME] successfully"
+        echo -e "${NC}${F[B]} - File:${F[W]}[$FILE_NAME]${F[B]} failed test case with ${F[W]}[$LINTER_NAME]${F[B]} successfully${NC}"
         # Increment counter that check was ran
         ((TESTS_RAN++))
       fi
@@ -477,15 +491,14 @@ function TestCodebase()
     #################################################
     # We failed to find files and no tests were ran #
     #################################################
-    echo "ERROR! Failed to find any tests ran for the Linter:[$LINTER_NAME]"!
+    echo -e "${NC}${B[R]}${F[W]}ERROR!${NC} Failed to find any tests ran for the Linter:[$LINTER_NAME]${NC}"!
     echo "Please validate logic or that tests exist!"
     exit 1
   fi
 }
 ################################################################################
 #### Function RunTestCases #####################################################
-function RunTestCases()
-{
+function RunTestCases() {
   # This loop will run the test cases and exclude user code
   # This is called from the automation process to validate new code
   # When a PR is opened, the new code is validated with the default branch
@@ -511,9 +524,10 @@ function RunTestCases()
   TestCodebase "JSON" "jsonlint" "jsonlint" ".*\.\(json\)\$" "json"
   TestCodebase "XML" "xmllint" "xmllint" ".*\.\(xml\)\$" "xml"
   TestCodebase "MARKDOWN" "markdownlint" "markdownlint -c $MD_LINTER_RULES" ".*\.\(md\)\$" "markdown"
-  TestCodebase "BASH" "shellcheck" "shellcheck" ".*\.\(sh\)\$" "shell"
+  TestCodebase "BASH" "shellcheck" "shellcheck --color" ".*\.\(sh\|bash\|dash\|ksh\)\$" "shell"
   TestCodebase "PYTHON" "pylint" "pylint --rcfile $PYTHON_LINTER_RULES" ".*\.\(py\)\$" "python"
   TestCodebase "PERL" "perl" "perl -Mstrict -cw" ".*\.\(pl\)\$" "perl"
+  TestCodebase "RAKU" "raku" "raku -c" ".*\.\(raku\|rakumod\|rakutest\|pm6\|pl6\|p6\)\$" "raku"
   TestCodebase "PHP" "php" "php -l" ".*\.\(php\)\$" "php"
   TestCodebase "RUBY" "rubocop" "rubocop -c $RUBY_LINTER_RULES" ".*\.\(rb\)\$" "ruby"
   TestCodebase "GO" "golangci-lint" "golangci-lint run -c $GO_LINTER_RULES" ".*\.\(go\)\$" "golang"
@@ -522,17 +536,20 @@ function RunTestCases()
   TestCodebase "JAVASCRIPT_STANDARD" "standard" "standard $JAVASCRIPT_STANDARD_LINTER_RULES" ".*\.\(js\)\$" "javascript"
   TestCodebase "TYPESCRIPT_ES" "eslint" "eslint --no-eslintrc -c $TYPESCRIPT_LINTER_RULES" ".*\.\(ts\)\$" "typescript"
   TestCodebase "TYPESCRIPT_STANDARD" "standard" "standard --parser @typescript-eslint/parser --plugin @typescript-eslint/eslint-plugin $TYPESCRIPT_STANDARD_LINTER_RULES" ".*\.\(ts\)\$" "typescript"
-  TestCodebase "DOCKER" "/dockerfilelint/bin/dockerfilelint" "/dockerfilelint/bin/dockerfilelint -c $DOCKER_LINTER_RULES" ".*\(Dockerfile\)\$" "docker"
+  TestCodebase "DOCKER" "dockerfilelint" "dockerfilelint -c $DOCKER_LINTER_RULES" ".*\(Dockerfile\)\$" "docker"
   TestCodebase "ANSIBLE" "ansible-lint" "ansible-lint -v -c $ANSIBLE_LINTER_RULES" ".*\.\(yml\|yaml\)\$" "ansible"
   TestCodebase "TERRAFORM" "tflint" "tflint -c $TERRAFORM_LINTER_RULES" ".*\.\(tf\)\$" "terraform"
   TestCodebase "CFN" "cfn-lint" "cfn-lint --config-file $CFN_LINTER_RULES" ".*\.\(json\|yml\|yaml\)\$" "cfn"
-  TestCodebase "POWERSHELL" "pwsh" "pwsh -c Invoke-ScriptAnalyzer -EnableExit -Settings $POWERSHELL_LINTER_RULES -Path" ".*\.\(ps1\|psm1\|psd1\|ps1xml\|pssc\|psrc\|cdxml\)\$" "powershell"
+  TestCodebase "POWERSHELL" "pwsh" "Invoke-ScriptAnalyzer -EnableExit -Settings $POWERSHELL_LINTER_RULES -Path" ".*\.\(ps1\|psm1\|psd1\|ps1xml\|pssc\|psrc\|cdxml\)\$" "powershell"
+  TestCodebase "ARM" "arm-ttk" "Import-Module $ARM_TTK_PSD1 ; \$config = \$(Import-PowerShellDataFile -Path $ARM_LINTER_RULES) ; Test-AzTemplate @config -TemplatePath" ".*\.\(json\)\$" "arm"
   TestCodebase "CSS" "stylelint" "stylelint --config $CSS_LINTER_RULES" ".*\.\(css\)\$" "css"
   TestCodebase "ENV" "dotenv-linter" "dotenv-linter" ".*\.\(env\)\$" "env"
   TestCodebase "CLOJURE" "clj-kondo" "clj-kondo --config $CLOJURE_LINTER_RULES --lint" ".*\.\(clj\|cljs\|cljc\|edn\)\$" "clojure"
   TestCodebase "KOTLIN" "ktlint" "ktlint" ".*\.\(kt\|kts\)\$" "kotlin"
   TestCodebase "PROTOBUF" "protolint" "protolint lint --config_path $PROTOBUF_LINTER_RULES" ".*\.\(proto\)\$" "protobuf"
   TestCodebase "OPENAPI" "spectral" "spectral lint -r $OPENAPI_LINTER_RULES" ".*\.\(ymlopenapi\|jsonopenapi\)\$" "openapi"
+  TestCodebase "DART" "dart" "dartanalyzer --fatal-infos  --fatal-warnings --options $DART_LINTER_RULES" ".*\.\(dart\)\$" "dart"
+  TestCodebase "HTML" "htmlhint" "htmlhint --config $HTML_LINTER_RULES" ".*\.\(html\)\$" "html"
 
   #################
   # Footer prints #
@@ -543,8 +560,7 @@ function RunTestCases()
 }
 ################################################################################
 #### Function LintAnsibleFiles #################################################
-function LintAnsibleFiles()
-{
+function LintAnsibleFiles() {
   ######################
   # Create Print Array #
   ######################
@@ -580,14 +596,14 @@ function LintAnsibleFiles()
   ##############################
   if [ $ERROR_CODE -ne 0 ]; then
     # Failed
-    echo "ERROR! Failed to find $LINTER_NAME in system!"
-    echo "ERROR:[$VALIDATE_INSTALL_CMD]"
+    echo -e "${NC}${B[R]}${F[W]}ERROR!${NC} Failed to find $LINTER_NAME in system!${NC}"
+    echo -e "${NC}${B[R]}${F[W]}ERROR:${NC}[$VALIDATE_INSTALL_CMD]${NC}"
     exit 1
   else
     # Success
-    if [[ "$ACTIONS_RUNNER_DEBUG" == "true" ]]; then
+    if [[ $ACTIONS_RUNNER_DEBUG == "true" ]]; then
       # Success
-      echo "Successfully found binary in system"
+      echo -e "${NC}${F[B]}Successfully found binary in system${NC}"
       echo "Location:[$VALIDATE_INSTALL_CMD]"
     fi
   fi
@@ -635,8 +651,7 @@ function LintAnsibleFiles()
     # Check if we have data to look at #
     ####################################
     if [ $SKIP_FLAG -eq 0 ]; then
-      for LINE in "${PRINT_ARRAY[@]}"
-      do
+      for LINE in "${PRINT_ARRAY[@]}"; do
         #########################
         # Print the header line #
         #########################
@@ -644,11 +659,20 @@ function LintAnsibleFiles()
       done
     fi
 
+    ########################################
+    # Prepare context if TAP output format #
+    ########################################
+    if IsTAP ; then
+      TMPFILE=$(mktemp -q "/tmp/super-linter-${FILE_TYPE}.XXXXXX")
+      INDEX=0
+      mkdir -p "${REPORT_OUTPUT_FOLDER}"
+      REPORT_OUTPUT_FILE="${REPORT_OUTPUT_FOLDER}/super-linter-${FILE_TYPE}.${OUTPUT_FORMAT}"
+    fi
+
     ##################
     # Lint the files #
     ##################
-    for FILE in "${LIST_FILES[@]}"
-    do
+    for FILE in "${LIST_FILES[@]}"; do
 
       ########################################
       # Make sure we dont lint certain files #
@@ -657,6 +681,11 @@ function LintAnsibleFiles()
         # This is a file we dont look at
         continue
       fi
+
+      ##################################
+      # Increase the linted file index #
+      ##################################
+      (("INDEX++"))
 
       ####################
       # Get the filename #
@@ -686,27 +715,77 @@ function LintAnsibleFiles()
         #########
         # Error #
         #########
-        echo "ERROR! Found errors in [$LINTER_NAME] linter!"
-        echo "ERROR:[$LINT_CMD]"
+        echo -e "${NC}${B[R]}${F[W]}ERROR!${NC} Found errors in [$LINTER_NAME] linter!${NC}"
+        echo -e "${NC}${B[R]}${F[W]}ERROR:${NC}[$LINT_CMD]${NC}"
         # Increment error count
         ((ERRORS_FOUND_ANSIBLE++))
+
+        #######################################################
+        # Store the linting as a temporary file in TAP format #
+        #######################################################
+        if IsTAP ; then
+          echo "not ok ${INDEX} - ${FILE}" >> "${TMPFILE}"
+          ##########################################
+          # Report the detailed message if enabled #
+          ##########################################
+          DETAILED_MSG=$(TransformTAPDetails "$LINT_CMD")
+          if [ -n "${DETAILED_MSG}" ] ; then
+            printf "  ---\n  message: %s\n  ...\n" "$DETAILED_MSG" >> "${TMPFILE}"
+          fi
+        fi
+
       else
         ###########
         # Success #
         ###########
-        echo " - File:[$FILE_NAME] was linted with [$LINTER_NAME] successfully"
+        echo -e "${NC}${F[B]} - File:${F[W]}[$FILE_NAME]${F[B]} was linted with ${F[W]}[$LINTER_NAME]${F[B]} successfully${NC}"
+
+        #######################################################
+        # Store the linting as a temporary file in TAP format #
+        #######################################################
+        if IsTAP ; then
+          echo "ok ${INDEX} - ${FILE}" >> "${TMPFILE}"
+        fi
       fi
     done
+
+    #################################
+    # Generate report in TAP format #
+    #################################
+    if IsTAP && [ ${INDEX} -gt 0 ] ; then
+      printf "TAP version 13\n1..%s\n" "${INDEX}" > "${REPORT_OUTPUT_FILE}"
+      cat "${TMPFILE}" >> "${REPORT_OUTPUT_FILE}"
+    fi
   else # No ansible directory found in path
     ###############################
     # Check to see if debug is on #
     ###############################
-    if [[ "$ACTIONS_RUNNER_DEBUG" == "true" ]]; then
+    if [[ $ACTIONS_RUNNER_DEBUG == "true" ]]; then
       ########################
       # No Ansible dir found #
       ########################
-      echo "WARN! No Ansible base directory found at:[$ANSIBLE_DIRECTORY]"
+      echo -e "${NC}${F[Y]}WARN!${NC} No Ansible base directory found at:[$ANSIBLE_DIRECTORY]${NC}"
       echo "skipping ansible lint"
     fi
+  fi
+}
+################################################################################
+#### Function IsTap ############################################################
+function IsTAP() {
+  if [ "${OUTPUT_FORMAT}" == "tap" ] ; then
+    return 0
+  else
+    return 1
+  fi
+}
+################################################################################
+#### Function TransformTAPDetails ##############################################
+function TransformTAPDetails() {
+  DATA=$1
+  if [ -n "${DATA}" ] && [ "${OUTPUT_DETAILS}" == "detailed" ] ; then
+    #########################################################
+    # Transform new lines to \\n, remove colours and colons #
+    #########################################################
+    echo "${DATA}" | awk 'BEGIN{RS="\n";ORS="\\n"}1' | sed -r "s/\x1B\[([0-9]{1,3}(;[0-9]{1,2})?)?[mGK]//g" | tr ':' ' '
   fi
 }

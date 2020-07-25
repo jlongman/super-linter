@@ -9,8 +9,7 @@
 ################################################################################
 ################################################################################
 #### Function BuildFileList ####################################################
-function BuildFileList()
-{
+function BuildFileList() {
   # Need to build a list of all files changed
   # This can be pulled from the GITHUB_EVENT_PATH payload
   if [[ -n "${BITBUCKET_CLONE_DIR}" ]]; then
@@ -40,7 +39,7 @@ function BuildFileList()
   ################
   # print header #
   ################
-  if [[ "$ACTIONS_RUNNER_DEBUG" == "true" ]]; then
+  if [[ $ACTIONS_RUNNER_DEBUG == "true" ]]; then
     echo ""
     echo "----------------------------------------------"
     echo "Pulling in code history and branches..."
@@ -49,7 +48,10 @@ function BuildFileList()
   #################################################################################
   # Switch codebase back to the default branch to get a list of all files changed #
   #################################################################################
-  SWITCH_CMD=$(cd "$GITHUB_WORKSPACE" || exit; git pull --quiet; git checkout "$DEFAULT_BRANCH" 2>&1)
+  SWITCH_CMD=$(
+    git -C "$GITHUB_WORKSPACE" pull --quiet
+    git -C "$GITHUB_WORKSPACE" checkout "$DEFAULT_BRANCH" 2>&1
+  )
 
   #######################
   # Load the error code #
@@ -62,14 +64,14 @@ function BuildFileList()
   if [ $ERROR_CODE -ne 0 ]; then
     # Error
     echo "Failed to switch to $DEFAULT_BRANCH branch to get files changed!"
-    echo "ERROR:[$SWITCH_CMD]"
+    echo -e "${NC}${B[R]}${F[W]}ERROR:${NC}[$SWITCH_CMD]${NC}"
     exit 1
   fi
 
   ################
   # print header #
   ################
-  if [[ "$ACTIONS_RUNNER_DEBUG" == "true" ]]; then
+  if [[ $ACTIONS_RUNNER_DEBUG == "true" ]]; then
     echo ""
     echo "----------------------------------------------"
     echo "Generating Diff with:[git diff --name-only '$DEFAULT_BRANCH..$GITHUB_SHA' --diff-filter=d]"
@@ -90,8 +92,8 @@ function BuildFileList()
   ##############################
   if [ $ERROR_CODE -ne 0 ]; then
     # Error
-    echo "ERROR! Failed to gain a list of all files changed!"
-    echo "ERROR:[${RAW_FILE_ARRAY[*]}]"
+    echo -e "${NC}${B[R]}${F[W]}ERROR!${NC} Failed to gain a list of all files changed!${NC}"
+    echo -e "${NC}${B[R]}${F[W]}ERROR:${NC}[${RAW_FILE_ARRAY[*]}]${NC}"
     exit 1
   fi
   fi
@@ -101,19 +103,18 @@ function BuildFileList()
   echo ""
   echo "----------------------------------------------"
   echo "Files that have been modified in the commit(s):"
-  for FILE in "${RAW_FILE_ARRAY[@]}"
-  do
-    ##############
-    # Print file #
-    ##############
-    echo "File:[$FILE]"
-
+  for FILE in "${RAW_FILE_ARRAY[@]}"; do
     ###########################
     # Get the files extension #
     ###########################
     # Extract just the file and extension, reverse it, cut off extension,
     # reverse it back, substitute to lowercase
     FILE_TYPE=$(basename "$FILE" | rev | cut -f1 -d'.' | rev | awk '{print tolower($0)}')
+
+    ##############
+    # Print file #
+    ##############
+    echo "File:[$FILE], File_type:[$FILE_TYPE]"
 
     #########
     # DEBUG #
@@ -123,11 +124,11 @@ function BuildFileList()
     #####################
     # Get the CFN files #
     #####################
-    if [ "$FILE_TYPE" == "json" ] || [ "$FILE_TYPE" == "yml" ] || [ "$FILE_TYPE" == "yaml" ] && DetectCloudFormationFile "$FILE"; then
+    if [ "$FILE_TYPE" == "yml" ] || [ "$FILE_TYPE" == "yaml" ]; then
       ################################
       # Append the file to the array #
       ################################
-      FILE_ARRAY_CFN+=("$FILE")
+      FILE_ARRAY_YML+=("$FILE")
       ##########################################################
       # Set the READ_ONLY_CHANGE_FLAG since this could be exec #
       ##########################################################
@@ -141,11 +142,12 @@ function BuildFileList()
         # Append the file to the array #
         ################################
         FILE_ARRAY_CFN+=("$FILE")
+
+        ##########################################################
+        # Set the READ_ONLY_CHANGE_FLAG since this could be exec #
+        ##########################################################
+        READ_ONLY_CHANGE_FLAG=1
       fi
-      ##########################################################
-      # Set the READ_ONLY_CHANGE_FLAG since this could be exec #
-      ##########################################################
-      READ_ONLY_CHANGE_FLAG=1
     ######################
     # Get the JSON files #
     ######################
@@ -163,7 +165,15 @@ function BuildFileList()
         ################################
         FILE_ARRAY_OPENAPI+=("$FILE")
       fi
-
+      ############################
+      # Check if file is ARM #
+      ############################
+      if DetectARMFile "$FILE"; then
+        ################################
+        # Append the file to the array #
+        ################################
+        FILE_ARRAY_ARM+=("$FILE")
+      fi
       #####################################
       # Check if the file is CFN template #
       #####################################
@@ -217,6 +227,20 @@ function BuildFileList()
       # Append the file to the array #
       ################################
       FILE_ARRAY_PERL+=("$FILE")
+      ##########################################################
+      # Set the READ_ONLY_CHANGE_FLAG since this could be exec #
+      ##########################################################
+      READ_ONLY_CHANGE_FLAG=1
+    ######################
+    # Get the RAKU files #
+    ######################
+    elif [ "$FILE_TYPE" == "raku" ] || [ "$FILE_TYPE" == "rakumod" ] \
+        || [ "$FILE_TYPE" == "rakutest" ] || [ "$FILE_TYPE" == "pm6" ] \
+        || [ "$FILE_TYPE" == "pl6" ] || [ "$FILE_TYPE" == "p6" ] ; then
+      ################################
+      # Append the file to the array #
+      ################################
+      FILE_ARRAY_RAKU+=("$FILE")
       ##########################################################
       # Set the READ_ONLY_CHANGE_FLAG since this could be exec #
       ##########################################################
@@ -282,6 +306,33 @@ function BuildFileList()
       # Set the READ_ONLY_CHANGE_FLAG since this could be exec #
       ##########################################################
       READ_ONLY_CHANGE_FLAG=1
+    ############################
+    # Get the JSX files #
+    ############################
+    elif [ "$FILE_TYPE" == "jsx" ]; then
+      ################################
+      # Append the file to the array #
+      ################################
+      FILE_ARRAY_JSX+=("$FILE")
+      ##########################################################
+      # Set the READ_ONLY_CHANGE_FLAG since this could be exec #
+      ##########################################################
+      READ_ONLY_CHANGE_FLAG=1
+    ############################
+    # Get the TSX files #
+    ############################
+    elif [ "$FILE_TYPE" == "tsx" ]; then
+      ################################
+      # Append the file to the array #
+      ################################
+      FILE_ARRAY_TSX+=("$FILE")
+      ##########################################################
+      # Set the READ_ONLY_CHANGE_FLAG since this could be exec #
+      ##########################################################
+      READ_ONLY_CHANGE_FLAG=1
+    ########################
+    # Get the Golang files #
+    ########################
     ############################
     # Get the TypeScript files #
     ############################
@@ -357,6 +408,15 @@ function BuildFileList()
     ############################
     # Get the Protocol Buffers files #
     ############################
+    elif [ "$FILE_TYPE" == "dart" ]; then
+      ################################
+      # Append the file to the array #
+      ################################
+      FILE_ARRAY_DART+=("$FILE")
+      ##########################################################
+      # Set the READ_ONLY_CHANGE_FLAG since this could be exec #
+      ##########################################################
+      READ_ONLY_CHANGE_FLAG=1
     elif [ "$FILE_TYPE" == "proto" ]; then
       ################################
       # Append the file to the array #
@@ -366,7 +426,7 @@ function BuildFileList()
       # Set the READ_ONLY_CHANGE_FLAG since this could be exec #
       ##########################################################
       READ_ONLY_CHANGE_FLAG=1
-    elif [ "$FILE" == "Dockerfile" ]; then
+    elif [ "$FILE" == "dockerfile" ] || [ "$FILE_TYPE" == "dockerfile" ]; then
       ################################
       # Append the file to the array #
       ################################
@@ -384,6 +444,15 @@ function BuildFileList()
       # Set the READ_ONLY_CHANGE_FLAG since this could be exec #
       ##########################################################
       READ_ONLY_CHANGE_FLAG=1
+    elif [ "$FILE_TYPE" == "html" ]; then
+      ################################
+      # Append the file to the array #
+      ##############################p##
+      FILE_ARRAY_HTML+=("$FILE")
+      ##########################################################
+      # Set the READ_ONLY_CHANGE_FLAG since this could be exec #
+      ##########################################################
+      READ_ONLY_CHANGE_FLAG=1
     else
       ##############################################
       # Use file to see if we can parse what it is #
@@ -393,11 +462,11 @@ function BuildFileList()
       #################
       # Check if bash #
       #################
-      if [[ "$GET_FILE_TYPE_CMD" == *"Bourne-Again shell script"* ]]; then
+      if [[ $GET_FILE_TYPE_CMD == *"Bourne-Again shell script"* ]]; then
         #######################
         # It is a bash script #
         #######################
-        echo "WARN! Found bash script without extension:[.sh]"
+        echo -e "${NC}${F[Y]}WARN!${NC} Found bash script without extension:[.sh]${NC}"
         echo "Please update file with proper extensions."
         ################################
         # Append the file to the array #
@@ -407,11 +476,11 @@ function BuildFileList()
         # Set the READ_ONLY_CHANGE_FLAG since this could be exec #
         ##########################################################
         READ_ONLY_CHANGE_FLAG=1
-      elif [[ "$GET_FILE_TYPE_CMD" == *"Ruby script"* ]]; then
+      elif [[ $GET_FILE_TYPE_CMD == *"Ruby script"* ]]; then
         #######################
         # It is a Ruby script #
         #######################
-        echo "WARN! Found ruby script without extension:[.rb]"
+        echo -e "${NC}${F[Y]}WARN!${NC} Found ruby script without extension:[.rb]${NC}"
         echo "Please update file with proper extensions."
         ################################
         # Append the file to the array #
@@ -425,7 +494,7 @@ function BuildFileList()
         ############################
         # Extension was not found! #
         ############################
-        echo "  - WARN! Failed to get filetype for:[$FILE]!"
+        echo -e "${NC}${F[Y]}  - WARN!${NC} Failed to get filetype for:[$FILE]!${NC}"
         ##########################################################
         # Set the READ_ONLY_CHANGE_FLAG since this could be exec #
         ##########################################################
@@ -434,12 +503,12 @@ function BuildFileList()
     fi
   done
 
-  echo ${READ_ONLY_CHANGE_FLAG}  > /dev/null 2>&1 || true # Workaround SC2034
+  echo ${READ_ONLY_CHANGE_FLAG} > /dev/null 2>&1 || true # Workaround SC2034
 
   #########################################
   # Need to switch back to branch of code #
   #########################################
-  SWITCH2_CMD=$(cd "$GITHUB_WORKSPACE" || exit; git checkout --progress --force "$GITHUB_SHA" 2>&1)
+  SWITCH2_CMD=$(git -C "$GITHUB_WORKSPACE" checkout --progress --force "$GITHUB_SHA" 2>&1)
 
   #######################
   # Load the error code #
@@ -452,7 +521,7 @@ function BuildFileList()
   if [ $ERROR_CODE -ne 0 ]; then
     # Error
     echo "Failed to switch back to branch!"
-    echo "ERROR:[$SWITCH2_CMD]"
+    echo -e "${NC}${B[R]}${F[W]}ERROR:${NC}[$SWITCH2_CMD]${NC}"
     exit 1
   fi
 
@@ -461,5 +530,5 @@ function BuildFileList()
   ################
   echo ""
   echo "----------------------------------------------"
-  echo "Successfully gathered list of files..."
+  echo -e "${NC}${F[B]}Successfully gathered list of files...${NC}"
 }
