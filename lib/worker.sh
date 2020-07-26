@@ -203,7 +203,8 @@ function LintCodebase() {
         )
       fi
       ERROR_CODE=$?
-      FILE=$(echo "${FILE}"| sed -e "s|${GITHUB_WORKSPACE}|.|")
+      ORIG_FILE="$FILE"
+      FILE=$(echo "${FILE}"| sed -e "s|${GITHUB_WORKSPACE}|.|") # TODO why this necessary?
       #######################
       # Load the error code #
       #######################
@@ -224,9 +225,27 @@ function LintCodebase() {
         (("ERRORS_FOUND_$FILE_TYPE++"))
         (("TOTAL_ERRORS_FOUND++"))
 
+
+
         if [[ "$RUN_LOCAL" == "false" && "$BITBUCKET_CODENOTIFY" != "false" ]]; then
-          bitbucket_annotate
-          bitbucket_report "$TOTAL_ERRORS_FOUND"
+          count_increase=$(
+         {
+            echo "$LINTER_NAME"
+            echo "$FILE_TYPE"
+            echo "$FILE"
+            echo "$TOTAL_ERRORS_FOUND"
+            echo "$LINT_CMD"
+          }  | python3 /action/lib/lint2BB.py)
+          echo "$count_increase"
+          if [ ${count_increase} -gt 0 ]; then
+            echo "total $TOTAL_ERRORS_FOUND - $count_increase"
+            TOTAL_ERRORS_FOUND="$count_increase"
+            echo "total $TOTAL_ERRORS_FOUND"
+
+          else
+            bitbucket_annotate
+            bitbucket_report "$TOTAL_ERRORS_FOUND"
+          fi
         fi
 
         #######################################################
@@ -261,7 +280,7 @@ function LintCodebase() {
     # Generate report in TAP format #
     #################################
     if IsTAP && [ ${INDEX} -gt 0 ] ; then
-      printf "TAP version 13\n1..%s\n" "${FILE_TYPE}" "${INDEX}" > "${REPORT_OUTPUT_FILE}"
+      printf "TAP version 13\n# %s\n1..%s\n" "${FILE_TYPE}" "${INDEX}" >"${REPORT_OUTPUT_FILE}"
       cat "${TMPFILE}" >> "${REPORT_OUTPUT_FILE}"
       if IsXUNIT; then
         mkdir -p "${XUNIT_OUTPUT_FOLDER}"
@@ -725,7 +744,7 @@ function LintAnsibleFiles() {
         # Store the linting as a temporary file in TAP format #
         #######################################################
         if IsTAP ; then
-          echo "not ok ${INDEX} - ${FILE}" >> "${TMPFILE}"
+          echo "not ok ${LINTER_NAME} ${INDEX} - ${FILE}" >> "${TMPFILE}"
           ##########################################
           # Report the detailed message if enabled #
           ##########################################
@@ -745,7 +764,7 @@ function LintAnsibleFiles() {
         # Store the linting as a temporary file in TAP format #
         #######################################################
         if IsTAP ; then
-          echo "ok ${INDEX} - ${FILE}" >> "${TMPFILE}"
+          echo "ok ${LINTER_NAME} ${INDEX} - ${FILE}" >> "${TMPFILE}"
         fi
       fi
     done

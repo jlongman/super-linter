@@ -1,0 +1,25 @@
+# testing nag
+# Only use spaces to indent your .yml configuration.
+# -----
+
+pipelines:
+  default:
+    - step:
+        name: super-linter
+        script:    
+          - pipe: docker://jlongman/super-linter:rc2
+            variables:
+              BITBUCKET_CODENOTIFY: "true"
+              OUTPUT_FORMAT: "xunit"
+              VALIDATE_ALL_CODEBASE: "true" # note false not supported yet
+              DEFAULT_BRANCH: "master"
+  custom:
+    full:
+      - step:
+          name: super-linter full
+          script:
+            - pipe: docker://jlongman/super-linter:stable
+              variables:
+                BITBUCKET_CODENOTIFY: "true"
+                OUTPUT_FORMAT: "xunit"
+                VALIDATE_ALL_CODEBASE: "true"

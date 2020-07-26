@@ -11,9 +11,8 @@ FROM github/super-linter:v3.3.2
 RUN npm -g --no-cache install \
     tap-xunit@2.4.1 && \
     pip install --no-cache-dir \
-    boto3 \
-    click \
-    troposphere
+    requests \
+    click
 
 ###########################################
 # Load GitHub Env Vars for GitHub Actions #
