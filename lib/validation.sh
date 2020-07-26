@@ -83,36 +83,36 @@ function GetValidationInfo() {
   # Determine if any linters were explicitly set #
   ################################################
   ANY_SET="false"
-  if [[ -n $VALIDATE_YAML || -n \
-    $VALIDATE_JSON || -n \
-    $VALIDATE_XML || -n \
-    $VALIDATE_MD || -n \
-    $VALIDATE_BASH || -n \
-    $VALIDATE_PERL || -n \
-    $VALIDATE_RAKU || -n \
-    $VALIDATE_PHP || -n \
-    $VALIDATE_PYTHON || -n \
-    $VALIDATE_RUBY || -n \
-    $VALIDATE_COFFEE || -n \
-    $VALIDATE_ANSIBLE || -n \
-    $VALIDATE_JAVASCRIPT_ES || -n \
-    $VALIDATE_JAVASCRIPT_STANDARD || -n \
-    $VALIDATE_TYPESCRIPT_ES || -n \
-    $VALIDATE_TYPESCRIPT_STANDARD || -n \
-    $VALIDATE_DOCKER || -n \
-    $VALIDATE_GO || -n \
-    $VALIDATE_TERRAFORM || -n \
-    $VALIDATE_POWERSHELL || -n \
-    $VALIDATE_ARM || -n \
-    $VALIDATE_CSS || -n \
-    $VALIDATE_ENV || -n \
-    $VALIDATE_CLOJURE || -n \
-    $VALIDATE_PROTOBUF || -n \
-    $VALIDATE_OPENAPI || -n \
-    $VALIDATE_KOTLIN || -n \
-    $VALIDATE_DART || -n \
-    $VALIDATE_EDITORCONFIG || -n \
-    $VALIDATE_HTML ]]; then
+  if [[ "$VALIDATE_YAML" == "true" || \
+    "$VALIDATE_JSON" == "true" || \
+    "$VALIDATE_XML" == "true" || \
+    "$VALIDATE_MD" == "true" || \
+    "$VALIDATE_BASH" == "true" || \
+    "$VALIDATE_PERL" == "true" || \
+    "$VALIDATE_RAKU" == "true" || \
+    "$VALIDATE_PHP" == "true" || \
+    "$VALIDATE_PYTHON" == "true" || \
+    "$VALIDATE_RUBY" == "true" || \
+    "$VALIDATE_COFFEE" == "true" || \
+    "$VALIDATE_ANSIBLE" == "true" || \
+    "$VALIDATE_JAVASCRIPT_ES" == "true" || \
+    "$VALIDATE_JAVASCRIPT_STANDARD" == "true" || \
+    "$VALIDATE_TYPESCRIPT_ES" == "true" || \
+    "$VALIDATE_TYPESCRIPT_STANDARD" == "true" || \
+    "$VALIDATE_DOCKER" == "true" || \
+    "$VALIDATE_GO" == "true" || \
+    "$VALIDATE_TERRAFORM" == "true" || \
+    "$VALIDATE_POWERSHELL" == "true" || \
+    "$VALIDATE_ARM" == "true" || \
+    "$VALIDATE_CSS" == "true" || \
+    "$VALIDATE_ENV" == "true" || \
+    "$VALIDATE_CLOJURE" == "true" || \
+    "$VALIDATE_PROTOBUF" == "true" || \
+    "$VALIDATE_OPENAPI" == "true" || \
+    "$VALIDATE_KOTLIN" == "true" || \
+    "$VALIDATE_DART" == "true" || \
+    "$VALIDATE_EDITORCONFIG" == "true" || \
+    "$VALIDATE_HTML" == "true" ]]; then
     ANY_SET="true"
   fi
 
@@ -127,7 +127,9 @@ function GetValidationInfo() {
     fi
   else
     # No linter flags were set - default all to true
-    VALIDATE_YAML="true"
+    if [[ -z $VALIDATE_YAML ]]; then
+      VALIDATE_YAML="true"
+    fi
   fi
 
   ####################################
@@ -141,7 +143,9 @@ function GetValidationInfo() {
     fi
   else
     # No linter flags were set - default all to true
-    VALIDATE_JSON="true"
+    if [[ -z $VALIDATE_JSON ]]; then
+      VALIDATE_JSON="true"
+    fi
   fi
 
   ###################################
@@ -155,7 +159,9 @@ function GetValidationInfo() {
     fi
   else
     # No linter flags were set - default all to true
-    VALIDATE_XML="true"
+    if [[ -z $VALIDATE_XML ]]; then
+      VALIDATE_XML="true"
+    fi
   fi
 
   ########################################
@@ -169,7 +175,9 @@ function GetValidationInfo() {
     fi
   else
     # No linter flags were set - default all to true
-    VALIDATE_MD="true"
+    if [[ -z $VALIDATE_MD ]]; then
+      VALIDATE_MD="true"
+    fi
   fi
 
   ####################################
@@ -183,7 +191,9 @@ function GetValidationInfo() {
     fi
   else
     # No linter flags were set - default all to true
-    VALIDATE_BASH="true"
+    if [[ -z $VALIDATE_BASH ]]; then
+      VALIDATE_BASH="true"
+    fi
   fi
 
   ####################################
@@ -197,7 +207,9 @@ function GetValidationInfo() {
     fi
   else
     # No linter flags were set - default all to true
-    VALIDATE_PERL="true"
+    if [[ -z $VALIDATE_PERL ]]; then
+      VALIDATE_PERL="true"
+    fi
   fi
 
   ####################################
@@ -211,7 +223,9 @@ function GetValidationInfo() {
     fi
   else
     # No linter flags were set - default all to true
-    VALIDATE_RAKU="true"
+    if [[ -z $VALIDATE_RAKU ]]; then
+      VALIDATE_RAKU="true"
+    fi
   fi
 
   ####################################
@@ -225,7 +239,9 @@ function GetValidationInfo() {
     fi
   else
     # No linter flags were set - default all to true
-    VALIDATE_PHP="true"
+    if [[ -z $VALIDATE_PHP ]]; then
+      VALIDATE_PHP="true"
+    fi
   fi
 
   ######################################
@@ -239,7 +255,9 @@ function GetValidationInfo() {
     fi
   else
     # No linter flags were set - default all to true
-    VALIDATE_PYTHON="true"
+    if [[ -z $VALIDATE_PYTHON ]]; then
+      VALIDATE_PYTHON="true"
+    fi
   fi
 
   ####################################
@@ -253,7 +271,9 @@ function GetValidationInfo() {
     fi
   else
     # No linter flags were set - default all to true
-    VALIDATE_RUBY="true"
+    if [[ -z $VALIDATE_RUBY ]]; then
+      VALIDATE_RUBY="true"
+    fi
   fi
 
   ######################################
@@ -267,7 +287,9 @@ function GetValidationInfo() {
     fi
   else
     # No linter flags were set - default all to true
-    VALIDATE_COFFEE="true"
+    if [[ -z $VALIDATE_COFFEE ]]; then
+      VALIDATE_COFFEE="true"
+    fi
   fi
 
   #######################################
@@ -281,7 +303,9 @@ function GetValidationInfo() {
     fi
   else
     # No linter flags were set - default all to true
-    VALIDATE_ANSIBLE="true"
+    if [[ -z $VALIDATE_ANSIBLE ]]; then
+      VALIDATE_ANSIBLE="true"
+    fi
   fi
 
   #############################################
@@ -295,7 +319,9 @@ function GetValidationInfo() {
     fi
   else
     # No linter flags were set - default all to true
-    VALIDATE_JAVASCRIPT_ES="true"
+    if [[ -z $VALIDATE_JAVASCRIPT_ES ]]; then
+      VALIDATE_JAVASCRIPT_ES="true"
+    fi
   fi
 
   ###################################################
@@ -309,7 +335,9 @@ function GetValidationInfo() {
     fi
   else
     # No linter flags were set - default all to true
-    VALIDATE_JAVASCRIPT_STANDARD="true"
+    if [[ -z $VALIDATE_JAVASCRIPT_STANDARD ]]; then
+      VALIDATE_JAVASCRIPT_STANDARD="true"
+    fi
   fi
 
   #############################################
@@ -323,7 +351,9 @@ function GetValidationInfo() {
     fi
   else
     # No linter flags were set - default all to true
-    VALIDATE_JSX="true"
+    if [[ -z $VALIDATE_JSX ]]; then
+      VALIDATE_JSX="true"
+    fi
   fi
 
   #############################################
@@ -337,7 +367,9 @@ function GetValidationInfo() {
     fi
   else
     # No linter flags were set - default all to true
-    VALIDATE_TSX="true"
+    if [[ -z $VALIDATE_TSX ]]; then
+      VALIDATE_TSX="true"
+    fi
   fi
 
   #############################################
@@ -351,7 +383,9 @@ function GetValidationInfo() {
     fi
   else
     # No linter flags were set - default all to true
-    VALIDATE_TYPESCRIPT_ES="true"
+    if [[ -z $VALIDATE_TYPESCRIPT_ES ]]; then
+      VALIDATE_TYPESCRIPT_ES="true"
+    fi
   fi
 
   ###################################################
@@ -365,7 +399,9 @@ function GetValidationInfo() {
     fi
   else
     # No linter flags were set - default all to true
-    VALIDATE_TYPESCRIPT_STANDARD="true"
+    if [[ -z $VALIDATE_TYPESCRIPT_STANDARD ]]; then
+      VALIDATE_TYPESCRIPT_STANDARD="true"
+    fi
   fi
 
   ######################################
@@ -379,7 +415,9 @@ function GetValidationInfo() {
     fi
   else
     # No linter flags were set - default all to true
-    VALIDATE_DOCKER="true"
+    if [[ -z $VALIDATE_DOCKER ]]; then
+      VALIDATE_DOCKER="true"
+    fi
   fi
 
   ##################################
@@ -393,7 +431,9 @@ function GetValidationInfo() {
     fi
   else
     # No linter flags were set - default all to true
-    VALIDATE_GO="true"
+    if [[ -z $VALIDATE_GO ]]; then
+      VALIDATE_GO="true"
+    fi
   fi
 
   #########################################
@@ -406,8 +446,10 @@ function GetValidationInfo() {
       VALIDATE_TERRAFORM="false"
     fi
   else
+    if [[ -z $VALIDATE_TERRAFORM ]]; then
     # No linter flags were set - default all to true
-    VALIDATE_TERRAFORM="true"
+      VALIDATE_TERRAFORM="true"
+    fi
   fi
 
   #########################################
@@ -421,7 +463,9 @@ function GetValidationInfo() {
     fi
   else
     # No linter flags were set - default all to true
-    VALIDATE_POWERSHELL="true"
+    if [[ -z $VALIDATE_POWERSHELL ]]; then
+      VALIDATE_POWERSHELL="true"
+    fi
   fi
 
   ###################################
@@ -435,9 +479,10 @@ function GetValidationInfo() {
     fi
   else
     # No linter flags were set - default all to true
-    VALIDATE_ARM="true"
+    if [[ -z "$VALIDATE_ARM" ]]; then
+      VALIDATE_ARM="true"
+    fi
   fi
-
   ###################################
   # Validate if we should check CSS #
   ###################################
@@ -449,7 +494,9 @@ function GetValidationInfo() {
     fi
   else
     # No linter flags were set - default all to true
-    VALIDATE_CSS="true"
+    if [[ -z $VALIDATE_CSS ]]; then
+        VALIDATE_CSS="true"
+    fi
   fi
 
   ###################################
@@ -463,7 +510,9 @@ function GetValidationInfo() {
     fi
   else
     # No linter flags were set - default all to true
-    VALIDATE_ENV="true"
+    if [[ -z $VALIDATE_ENV ]]; then
+      VALIDATE_ENV="true"
+    fi
   fi
 
   ######################################
@@ -477,7 +526,9 @@ function GetValidationInfo() {
     fi
   else
     # No linter flags were set - default all to true
-    VALIDATE_KOTLIN="true"
+    if [[ -z $VALIDATE_KOTLIN ]]; then
+      VALIDATE_KOTLIN="true"
+    fi
   fi
 
   ####################################
@@ -491,7 +542,9 @@ function GetValidationInfo() {
     fi
   else
     # No linter flags were set - default all to true
-    VALIDATE_DART="true"
+    if [[ -z $VALIDATE_DART ]]; then
+      VALIDATE_DART="true"
+    fi
   fi
 
   #######################################
@@ -505,7 +558,9 @@ function GetValidationInfo() {
     fi
   else
     # No linter flags were set - default all to true
-    VALIDATE_OPENAPI="true"
+    if [[ -z $VALIDATE_OPENAPI ]]; then
+      VALIDATE_OPENAPI="true"
+    fi
   fi
 
   #######################################
@@ -519,7 +574,9 @@ function GetValidationInfo() {
     fi
   else
     # No linter flags were set - default all to true
-    VALIDATE_PROTOBUF="true"
+    if [[ -z $VALIDATE_PROTOBUF ]]; then
+      VALIDATE_PROTOBUF="true"
+    fi
   fi
 
   #######################################
@@ -533,7 +590,9 @@ function GetValidationInfo() {
     fi
   else
     # No linter flags were set - default all to true
-    VALIDATE_CLOJURE="true"
+    if [[ -z $VALIDATE_CLOJURE ]]; then
+      VALIDATE_CLOJURE="true"
+    fi
   fi
 
   ############################################
@@ -549,7 +608,9 @@ function GetValidationInfo() {
     # No linter flags were set
     # special case checking for .editorconfig
     if [ -f "$GITHUB_WORKSPACE/.editorconfig" ]; then
-      VALIDATE_EDITORCONFIG="true"
+      if [[ -z $VALIDATE_EDITORCONFIG ]]; then
+        VALIDATE_EDITORCONFIG="true"
+      fi
     fi
   fi
 
@@ -564,7 +625,9 @@ function GetValidationInfo() {
     fi
   else
     # No linter flags were set - default all to true
-    VALIDATE_HTML="true"
+    if [[ -z $VALIDATE_HTML ]]; then
+      VALIDATE_HTML="true"
+    fi
   fi
 
   #######################################
