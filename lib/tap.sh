@@ -33,17 +33,17 @@ if IsTAP; then
     encodeComponent() {
       jq -aRs . <<<"$1"
     }
-
-    TransformTAPDetails()
-    {
-      DATA=$1
-      if [ -n "${DATA}" ] && [ "${OUTPUT_DETAILS}" == "detailed" ] ; then
-        #########################################################
-        # Transform new lines to \\n, remove colours and colons #
-        #########################################################
-        echo "${DATA}" | awk 'BEGIN{RS="\n";ORS="\\n"}1' | sed -r "s/\x1B\[([0-9]{1,3}(;[0-9]{1,2})?)?[mGK]//g" | tr ':' ' '
-      fi
-    }
+#
+#    TransformTAPDetails()
+#    {
+#      DATA=$1
+#      if [ -n "${DATA}" ] && [ "${OUTPUT_DETAILS}" == "detailed" ] ; then
+#        #########################################################
+#        # Transform new lines to \\n, remove colours and colons #
+#        #########################################################
+#        echo "${DATA}" | awk 'BEGIN{RS="\n";ORS="\\n"}1' | sed -r "s/\x1B\[([0-9]{1,3}(;[0-9]{1,2})?)?[mGK]//g" | tr ':' ' '
+#      fi
+#    }
 
     ##############################################################
     # check flag for validating the report folder does not exist #

@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 
 # shellcheck source=/dev/null
-source /action/lib/tap.sh   # Source the function script(s)
+#source /action/lib/tap.sh   # Source the function script(s)
+
+XUNIT_OUTPUT_FOLDER="${DEFAULT_WORKSPACE}/${OUTPUT_FOLDER}/test-reports"
 
 ################################################################################
 ################################################################################
@@ -216,7 +218,7 @@ function LintCodebase() {
         echo -e "${NC}${B[R]}${F[W]}ERROR!${NC} Found errors in [$LINTER_NAME] linter!${NC}"
 
         echo "To locally re-execute run the following:"
-        echo "docker run -v \$PWD$(dirname "${FILE}"):/tmp/lint -e RUN_LOCAL=true -eVALIDATE_${FILE_TYPE}=true  --rm -it jlongman/super-linter:stable"
+        echo "docker run -v \$PWD/$(dirname "${FILE}"):/tmp/lint -e RUN_LOCAL=true -eVALIDATE_${FILE_TYPE}=true  --rm -it jlongman/super-linter:stable"
         echo -e "${NC}${B[R]}${F[W]}ERROR:${NC}[$LINT_CMD]${NC}"
         # Increment the error count
         (("ERRORS_FOUND_$FILE_TYPE++"))
@@ -270,7 +272,6 @@ function LintCodebase() {
           cat "${TEST_OUTPUT_FILE}" # FIXME
         fi
         cat "${REPORT_OUTPUT_FILE}" # FIXME
-      fi
     fi
   fi
 }
@@ -772,12 +773,40 @@ function LintAnsibleFiles() {
 ################################################################################
 #### Function IsTap ############################################################
 function IsTAP() {
-  if [ "${OUTPUT_FORMAT}" == "tap" ] ; then
+  if [[ "${OUTPUT_FORMAT}" == "tap" ]] || [[ "${OUTPUT_FORMAT}" == "xunit" ]]; then
     return 0
   else
     return 1
   fi
 }
+
+################################################################################
+#### Function IsXUnit ############################################################
+IsXUNIT() {
+  if [[ "${OUTPUT_FORMAT}" == "xunit" ]]; then
+    return 0
+  else
+    return 1
+  fi
+}
+
+if IsTAP; then
+    encodeComponent() {
+      jq -aRs . <<<"$1"
+    }
+
+
+    ##############################################################
+    # check flag for validating the report folder does not exist #
+    ##############################################################
+    if [[ -d "${REPORT_OUTPUT_FOLDER}" ]]; then
+        echo "ERROR! Found ${REPORT_OUTPUT_FOLDER}"
+        echo "Please remove the folder and try again."
+        exit 1
+    fi
+
+    mkdir -p "${XUNIT_OUTPUT_FOLDER}" # FIXME
+fi
 ################################################################################
 #### Function TransformTAPDetails ##############################################
 function TransformTAPDetails() {
