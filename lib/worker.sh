@@ -3,8 +3,6 @@
 # shellcheck source=/dev/null
 #source /action/lib/tap.sh   # Source the function script(s)
 
-XUNIT_OUTPUT_FOLDER="${DEFAULT_WORKSPACE}/${OUTPUT_FOLDER}/test-reports"
-
 ################################################################################
 ################################################################################
 ########### Super-Linter linting Functions @admiralawkbar ######################
@@ -83,7 +81,7 @@ function LintCodebase() {
     LIST_FILES=("${FILE_ARRAY[@]}") # Copy the array into list
   else
     ###############################################################################
-    # Set the file seperator to newline to allow for grabbing objects with spaces #
+    # Set the file separator to newline to allow for grabbing objects with spaces #
     ###############################################################################
     IFS=$'\n'
 
@@ -146,9 +144,9 @@ function LintCodebase() {
       FILE_NAME=$(basename "${FILE}" 2>&1)
       DIR_NAME=$(dirname "${FILE}" 2>&1)
 
-      #####################################################
-      # Make sure we dont lint node modules or test cases #
-      #####################################################
+      ######################################################
+      # Make sure we don't lint node modules or test cases #
+      ######################################################
       if [[ ${FILE} == *"node_modules"* ]]; then
         # This is a node modules file
         continue
@@ -156,7 +154,7 @@ function LintCodebase() {
         # This is the test cases, we should always skip
         continue
       elif [[ ${FILE} == *".git"* ]]; then
-        # This is likely the .git folder and shouldnt be parsed
+        # This is likely the .git folder and shouldn't be parsed
         continue
       fi
 
@@ -211,15 +209,20 @@ function LintCodebase() {
         ################################
         # Lint the file with the rules #
         ################################
+        #        set -x
         LINT_CMD=$(
           cd "${GITHUB_WORKSPACE}" || exit
           ${LINTER_COMMAND} "${FILE}" 2>&1
         )
+        #        set +x
       fi
 
       #######################
       # Load the error code #
       #######################
+      ERROR_CODE=$?
+      ORIG_FILE="$FILE"
+      FILE=$(echo "${FILE}" | sed -e "s|${GITHUB_WORKSPACE}|.|") # TODO why this necessary?
 
       ##############################
       # Check the shell for errors #
@@ -234,7 +237,7 @@ function LintCodebase() {
         error "[${LINT_CMD}]"
         error "Linter CMD:[${LINTER_COMMAND} ${FILE}]"
         # Increment the error count
-        (("ERRORS_FOUND_$FILE_TYPE++"))
+        (("ERRORS_FOUND_${FILE_TYPE}++"))
         (("TOTAL_ERRORS_FOUND++"))
 
         #######################################################
@@ -246,20 +249,22 @@ function LintCodebase() {
         fi
         if [[ "$RUN_LOCAL" == "false" && "$BITBUCKET_CODENOTIFY" != "false" ]]; then
           DETAILED_MSG=$(TransformBBDetails "$LINT_CMD")
+
           count_increase=$(
-         {
-            echo "$LINTER_NAME"
-            echo "$FILE_TYPE"
-            echo "$FILE"
-            echo "$TOTAL_ERRORS_FOUND"
-            echo "$DETAILED_MSG"
-          }  | python3 /action/lib/lint2BB.py)
+            {
+              echo "${LINTER_NAME}"
+              echo "${FILE_TYPE}"
+              echo "${FILE}"
+              echo "${TOTAL_ERRORS_FOUND}"
+              echo "${DETAILED_MSG}"
+            } | PYTHONPATH=/action/lib python3 /action/lib/lint2BB.py
+          )
+
           debug "$count_increase"
           if [ ${count_increase} -gt 0 ]; then
             info "total $TOTAL_ERRORS_FOUND - $count_increase"
             TOTAL_ERRORS_FOUND="$count_increase"
             info "total $TOTAL_ERRORS_FOUND"
-
           else
             bitbucket_annotate
             bitbucket_report "$TOTAL_ERRORS_FOUND"
@@ -285,17 +290,17 @@ function LintCodebase() {
     # Generate report in TAP format #
     #################################
     if IsTAP && [ ${INDEX} -gt 0 ]; then
-      HeaderTap "${INDEX}" "${REPORT_OUTPUT_FILE}"
-      cat "${TMPFILE}" >> "${REPORT_OUTPUT_FILE}"
+      HeaderTap "${INDEX}" "${REPORT_OUTPUT_FILE}" "${FILE_TYPE}"
+      cat "${TMPFILE}" >>"${REPORT_OUTPUT_FILE}"
       if IsXUNIT; then
         mkdir -p "${XUNIT_OUTPUT_FOLDER}"
-          TEST_OUTPUT_FILE="${XUNIT_OUTPUT_FOLDER}/$(basename "$REPORT_OUTPUT_FILE").xml"
-          tap-xunit <"${REPORT_OUTPUT_FILE}" |
-            sed -E -e 's|XXXEOL|\r\n|g' -e 's|testcase name="#[[:digit:]]+ (\./)?|testcase name="|g' \
-              >"${TEST_OUTPUT_FILE}"
-          cat "${TEST_OUTPUT_FILE}" # FIXME
-        fi
-        cat "${REPORT_OUTPUT_FILE}" # FIXME
+        TEST_OUTPUT_FILE="${XUNIT_OUTPUT_FOLDER}/$(basename "$REPORT_OUTPUT_FILE").xml"
+        tap-xunit <"${REPORT_OUTPUT_FILE}" |
+          sed -E -e 's|XXXEOL|\r\n|g' -e 's|testcase name="#[[:digit:]]+ (\./)?|testcase name="|g' \
+            >"${TEST_OUTPUT_FILE}"
+        cat "${TEST_OUTPUT_FILE}" # FIXME
+      fi
+      cat "${REPORT_OUTPUT_FILE}" # FIXME
     fi
   fi
 }
@@ -305,12 +310,12 @@ function TestCodebase() {
   ####################
   # Pull in the vars #
   ####################
-  FILE_TYPE="${1}"             # Pull the variable and remove from array path  (Example: JSON)
-  LINTER_NAME="${2}"           # Pull the variable and remove from array path  (Example: jsonlint)
-  LINTER_COMMAND="${3}"        # Pull the variable and remove from array path  (Example: jsonlint -c ConfigFile /path/to/file)
-  FILE_EXTENSIONS="${4}"       # Pull the variable and remove from array path  (Example: *.json)
-  INDVIDUAL_TEST_FOLDER="${5}" # Folder for specific tests
-  TESTS_RAN=0                  # Incremented when tests are ran, this will help find failed finds
+  FILE_TYPE="${1}"              # Pull the variable and remove from array path  (Example: JSON)
+  LINTER_NAME="${2}"            # Pull the variable and remove from array path  (Example: jsonlint)
+  LINTER_COMMAND="${3}"         # Pull the variable and remove from array path  (Example: jsonlint -c ConfigFile /path/to/file)
+  FILE_EXTENSIONS="${4}"        # Pull the variable and remove from array path  (Example: *.json)
+  INDIVIDUAL_TEST_FOLDER="${5}" # Folder for specific tests
+  TESTS_RAN=0                   # Incremented when tests are ran, this will help find failed finds
 
   ################
   # print header #
@@ -351,7 +356,7 @@ function TestCodebase() {
   #################################
   # Get list of all files to lint #
   #################################
-  mapfile -t LIST_FILES < <(find "${GITHUB_WORKSPACE}/${TEST_CASE_FOLDER}/${INDVIDUAL_TEST_FOLDER}" -path "*/node_modules" -prune -o -type f -regex "${FILE_EXTENSIONS}" ! -path "${GITHUB_WORKSPACE}/${TEST_CASE_FOLDER}/ansible/ghe-initialize/*" | sort 2>&1)
+  mapfile -t LIST_FILES < <(find "${GITHUB_WORKSPACE}/${TEST_CASE_FOLDER}/${INDIVIDUAL_TEST_FOLDER}" -path "*/node_modules" -prune -o -type f -regex "${FILE_EXTENSIONS}" ! -path "${GITHUB_WORKSPACE}/${TEST_CASE_FOLDER}/ansible/ghe-initialize/*" | sort 2>&1)
 
   ########################################
   # Prepare context if TAP output format #
@@ -420,11 +425,11 @@ function TestCodebase() {
     # Check for ansible #
     #####################
     if [[ ${FILE_TYPE} == "ANSIBLE" ]]; then
-      ########################################
-      # Make sure we dont lint certain files #
-      ########################################
+      #########################################
+      # Make sure we don't lint certain files #
+      #########################################
       if [[ ${FILE} == *"vault.yml"* ]] || [[ ${FILE} == *"galaxy.yml"* ]]; then
-        # This is a file we dont look at
+        # This is a file we don't look at
         continue
       fi
 
@@ -432,7 +437,7 @@ function TestCodebase() {
       # Lint the file with the rules #
       ################################
       LINT_CMD=$(
-        cd "${GITHUB_WORKSPACE}/${TEST_CASE_FOLDER}/${INDVIDUAL_TEST_FOLDER}" || exit
+        cd "${GITHUB_WORKSPACE}/${TEST_CASE_FOLDER}/${INDIVIDUAL_TEST_FOLDER}" || exit
         ${LINTER_COMMAND} "${FILE}" 2>&1
       )
     elif [[ ${FILE_TYPE} == "POWERSHELL" ]] || [[ ${FILE_TYPE} == "ARM" ]]; then
@@ -542,17 +547,17 @@ function TestCodebase() {
   # Generate report in TAP format and validate with the expected TAP output #
   ###########################################################################
   if IsTAP && [ ${TESTS_RAN} -gt 0 ]; then
-    HeaderTap "${TESTS_RAN}" "${REPORT_OUTPUT_FILE}"
-    cat "${TMPFILE}" >> "${REPORT_OUTPUT_FILE}"
+    HeaderTap "${TESTS_RAN}" "${REPORT_OUTPUT_FILE}" "${FILE_TYPE}"
+    cat "${TMPFILE}" >>"${REPORT_OUTPUT_FILE}"
 
     ########################################################################
     # If expected TAP report exists then compare with the generated report #
     ########################################################################
-    EXPECTED_FILE="${GITHUB_WORKSPACE}/${TEST_CASE_FOLDER}/${INDVIDUAL_TEST_FOLDER}/reports/expected-${FILE_TYPE}.tap"
+    EXPECTED_FILE="${GITHUB_WORKSPACE}/${TEST_CASE_FOLDER}/${INDIVIDUAL_TEST_FOLDER}/reports/expected-${FILE_TYPE}.tap"
     if [ -e "${EXPECTED_FILE}" ]; then
       TMPFILE=$(mktemp -q "/tmp/diff-${FILE_TYPE}.XXXXXX")
       ## Ignore white spaces, case sensitive
-      if ! diff -a -w -i "${EXPECTED_FILE}" "${REPORT_OUTPUT_FILE}" > "${TMPFILE}" 2>&1; then
+      if ! diff -a -w -i "${EXPECTED_FILE}" "${REPORT_OUTPUT_FILE}" >"${TMPFILE}" 2>&1; then
         #############################################
         # We failed to compare the reporting output #
         #############################################
@@ -796,7 +801,8 @@ function LintAnsibleFiles() {
       ################################
       # Lint the file with the rules #
       ################################
-      LINT_CMD=$("${LINTER_NAME}" -v -c "${ANSIBLE_LINTER_RULES}" "${ANSIBLE_DIRECTORY}/${FILE}" 2>&1)
+      LINT_CMD=$("$LINTER_NAME" -v -c "$ANSIBLE_LINTER_RULES" "$ANSIBLE_DIRECTORY/$FILE" 2>&1)
+      #      LINT_CMD=$("${LINTER_NAME}" -v -c "${ANSIBLE_LINTER_RULES}" "${ANSIBLE_DIRECTORY}/${FILE}" 2>&1)
 
       #######################
       # Load the error code #
@@ -818,15 +824,9 @@ function LintAnsibleFiles() {
         #######################################################
         # Store the linting as a temporary file in TAP format #
         #######################################################
-        if IsTAP ; then
-          echo "not ok ${INDEX} - ${FILE}" >> "${TMPFILE}"
-          ##########################################
-          # Report the detailed message if enabled #
-          ##########################################
-          DETAILED_MSG=$(TransformTAPDetails "$LINT_CMD")
-          if [ -n "${DETAILED_MSG}" ] ; then
-            printf "  ---\n  message: %s\n  ...\n" "$DETAILED_MSG" >> "${TMPFILE}"
-          fi
+        if IsTAP; then
+          NotOkTap "${INDEX}" "${FILE}" "${TMPFILE}" "${LINTER_NAME}"
+          AddDetailedMessageIfEnabled "${LINT_CMD}" "${TMPFILE}"
         fi
 
       else
@@ -838,8 +838,8 @@ function LintAnsibleFiles() {
         #######################################################
         # Store the linting as a temporary file in TAP format #
         #######################################################
-        if IsTAP ; then
-          echo "ok ${INDEX} - ${FILE}" >> "${TMPFILE}"
+        if IsTAP; then
+          OkTap "${INDEX}" "${FILE}" "${TMPFILE}" "${LINTER_NAME}"
         fi
       fi
     done
@@ -848,8 +848,8 @@ function LintAnsibleFiles() {
     # Generate report in TAP format #
     #################################
     if IsTAP && [ ${INDEX} -gt 0 ]; then
-      HeaderTap "${INDEX}" "${REPORT_OUTPUT_FILE}"
-      cat "${TMPFILE}" >> "${REPORT_OUTPUT_FILE}"
+      HeaderTap "${INDEX}" "${REPORT_OUTPUT_FILE}" "${FILE_TYPE}"
+      cat "${TMPFILE}" >>"${REPORT_OUTPUT_FILE}"
     fi
   else
     ########################
@@ -862,7 +862,7 @@ function LintAnsibleFiles() {
 ################################################################################
 #### Function IsTap ############################################################
 function IsTAP() {
-  if [ "${OUTPUT_FORMAT}" == "tap" ] ; then
+  if [[ "${OUTPUT_FORMAT}" == "tap" ]] || [[ "${OUTPUT_FORMAT}" == "xunit" ]]; then
     return 0
   else
     return 1
@@ -880,21 +880,18 @@ IsXUNIT() {
 }
 
 if IsTAP; then
-    encodeComponent() {
-      jq -aRs . <<<"$1"
-    }
+  encodeComponent() {
+    jq -aRs . <<<"$1"
+  }
 
-
-    ##############################################################
-    # check flag for validating the report folder does not exist #
-    ##############################################################
-    if [[ -d "${REPORT_OUTPUT_FOLDER}" ]]; then
-        echo "ERROR! Found ${REPORT_OUTPUT_FOLDER}"
-        echo "Please remove the folder and try again."
-        exit 1
-    fi
-
-    mkdir -p "${XUNIT_OUTPUT_FOLDER}" # FIXME
+  ##############################################################
+  # check flag for validating the report folder does not exist #
+  ##############################################################
+  if [[ -d "${REPORT_OUTPUT_FOLDER}" ]]; then
+    echo "ERROR! Found ${REPORT_OUTPUT_FOLDER}"
+    echo "Please remove the folder and try again."
+    exit 1
+  fi
 fi
 ################################################################################
 #### Function TransformTAPDetails ##############################################
@@ -915,19 +912,20 @@ function HeaderTap() {
   ################
   INDEX="${1}"       # File being validated
   OUTPUT_FILE="${2}" # Output location
+  FILE_TYPE="${3}"   # filetype
 
   ###################
   # Print the goods #
   ###################
-  printf "TAP version 13\n1..%s\n" "${INDEX}" > "${OUTPUT_FILE}"
- #printf "TAP version 13\n1..%s\n" "${INDEX}" > "${REPORT_OUTPU#mine
+  # printf "TAP version 13\n1..%s\n" "${INDEX}" >"${OUTPUT_FILE}"
+  printf "TAP version 13\n# %s\n1..%s\n" "${FILE_TYPE}" "${INDEX}" >"${OUTPUT_FILE}"
 }
 
 ################################################################################
 #### Function TransformTAPDetails ##############################################
 function TransformBBDetails() {
   DATA=$1
-  if [ -n "${DATA}" ] && [ "${OUTPUT_DETAILS}" == "detailed" ] ; then
+  if [ -n "${DATA}" ] && [ "${OUTPUT_DETAILS}" == "detailed" ]; then
     #########################################################
     # Transform new lines to \\n, remove colours and colons #
     #########################################################
@@ -941,14 +939,15 @@ function OkTap() {
   ################
   # Pull in Vars #
   ################
-  INDEX="${1}"     # Location
-  FILE="${2}"      # File being validated
-  TEMP_FILE="${3}" # Temp file location
+  INDEX="${1}"           # Location
+  FILE="${2}"            # File being validated
+  TEMP_FILE="${3}"       # Temp file location
+  TAP_LINTER_NAME="${4}" # duh
 
   ###################
   # Print the goods #
   ###################
-  echo "ok ${INDEX} - ${FILE}" >> "${TEMP_FILE}"
+  echo "ok ${TAP_LINTER_NAME} ${INDEX} - ${FILE}" >>"${TEMP_FILE}"
 }
 ################################################################################
 #### Function NotOkTap #########################################################
@@ -956,14 +955,15 @@ function NotOkTap() {
   ################
   # Pull in Vars #
   ################
-  INDEX="${1}"     # Location
-  FILE="${2}"      # File being validated
-  TEMP_FILE="${3}" # Temp file location
+  INDEX="${1}"           # Location
+  FILE="${2}"            # File being validated
+  TEMP_FILE="${3}"       # Temp file location
+  TAP_LINTER_NAME="${4}" # duh
 
   ###################
   # Print the goods #
   ###################
-  echo "not ok ${INDEX} - ${FILE}" >> "${TEMP_FILE}"
+  echo "not ok ${TAP_LINTER_NAME} ${INDEX} - ${FILE}" >>"${TEMP_FILE}"
 }
 ################################################################################
 #### Function AddDetailedMessageIfEnabled ######################################
@@ -979,6 +979,6 @@ function AddDetailedMessageIfEnabled() {
   ####################
   DETAILED_MSG=$(TransformTAPDetails "${LINT_CMD}")
   if [ -n "${DETAILED_MSG}" ]; then
-    printf "  ---\n  message: %s\n  ...\n" "${DETAILED_MSG}" >> "${TEMP_FILE}"
+    printf "  ---\n  message: %s\n  ...\n" "${DETAILED_MSG}" >>"${TEMP_FILE}"
   fi
 }

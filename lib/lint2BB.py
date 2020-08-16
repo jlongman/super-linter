@@ -89,22 +89,33 @@ def annotate_batch(this_count, data):
 
 def get_annotation_document(data, this_count):
     detail = data["message"]
+    if "summary" in data.keys():
+        if data["summary"] is None:
+            summary = data["message"]
+        else:
+            summary = data["summary"]
+    else:
+        summary = data["message"]
+    if len(summary) > 100:
+        summary = "{}...".format(summary[:96])
+
     if len(detail) > 2000:
         detail = "{}...".format(detail[:1996])
     document = {
         'external_id': 'super-{linter}-{filetype}-{count}'.format(linter=linter, filetype=file_type, count=this_count),
         'title': '{linter} - {filetype}'.format(linter=linter, filetype=file_type),
-        'summary': 'Super-linter/{linter} detected problem # {count}'.format(linter=linter, count=this_count),
-        'details': detail,
+        'summary': summary,
         'annotation_type': 'CODE_SMELL',
         'reporter': 'superlint',
         'path': data['file']
     }
+    if summary != detail:  # only add detail when necessary
+        document['details'] = detail
     if 'line' in data:
         if isinstance(data['line'], int) and int(data['line']) > 0:
             document['line'] = data['line']
         else:
-            print("Unexpected data['line']: {}".format(data['line']))
+            print("Unexpected data['line']: {}".format(data['line']), file=sys.stderr)
     if 'column' in data:
         document['column'] = data['column']
     document["data"] = [{
@@ -120,7 +131,7 @@ def get_annotation_document(data, this_count):
 if True:
     messages = sys.stdin
     linter = messages.readline().strip()
-    print("file_name {}".format(linter), file=sys.stderr)
+    print("linter {}".format(linter), file=sys.stderr)
     file_type = messages.readline().strip()
     file_name = messages.readline().strip()
     count = int(messages.readline().strip())

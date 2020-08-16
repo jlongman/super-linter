@@ -8,6 +8,7 @@ class Parser(lint2bb_parser):
     def parse(self, messages):
         errors = []
         last_message = None
+        last_summary = None
         raw_line = messages.readline()
         line = -1  # error case
         import sys  # fixme remove sys w/ debugging
@@ -23,14 +24,18 @@ class Parser(lint2bb_parser):
                         "parser": self.linter,
                         "fileType": self.file_type,
                         "file": self.file,
-                        "line": line,
+                        "line": int(line),
                         "level": "warning",
                         "message": last_message,
+                        "summary": last_summary,
                     })
                 last_message = ""
+                last_summary = None
                 line_offset = raw_line.index(" line ") + len(" line ")
                 line = raw_line[line_offset:-1]
             else:
+                if raw_line.startswith("^-- "):
+                    last_summary = raw_line[len("^-- "):]
                 last_message = f"{last_message} {raw_line}"
             raw_line = messages.readline()
 
@@ -39,7 +44,7 @@ class Parser(lint2bb_parser):
                 "parser": self.linter,
                 "fileType": self.file_type,
                 "file": self.file,
-                "line": line,
+                "line": int(line),
                 "level": "MEDIUM",
                 "severity": "MEDIUM",
                 "message": last_message,

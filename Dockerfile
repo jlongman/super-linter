@@ -6,7 +6,7 @@
 ##################
 # Get base image #
 ##################
-FROM github/super-linter:v3.3.2
+FROM github/super-linter:v3.6.0
 RUN npm -g --no-cache install \
     tap-xunit@2.4.1 && \
     pip install --no-cache-dir \

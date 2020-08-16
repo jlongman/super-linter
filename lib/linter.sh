@@ -6,79 +6,77 @@
 ################################################################################
 ################################################################################
 
-env | sort                                                              # FIXME debugging
+env | sort # FIXME debugging
 
 #########################
 # Source Function Files #
 #########################
 if [[ -n "${BITBUCKET_CLONE_DIR}" ]]; then
-  # shellcheck source=/dev/null
-  source /action/lib/bitbucket.sh   # Source the function script(s)
+  source /action/lib/bitbucket.sh # Source the function script(s)
 fi
 # shellcheck source=/dev/null
-source /action/lib/log.sh # Source the function script(s)
+source /action/lib/log.sh                                                                # Source the function script(s)
 # shellcheck source=/dev/null
-source /action/lib/buildFileList.sh # Source the function script(s)
+source /action/lib/buildFileList.sh                                                      # Source the function script(s)
 # shellcheck source=/dev/null
-source /action/lib/validation.sh # Source the function script(s)
+source /action/lib/validation.sh                                                         # Source the function script(s)
 # shellcheck source=/dev/null
-source /action/lib/worker.sh # Source the function script(s)
-
+source /action/lib/worker.sh                                                             # Source the function script(s)
 
 ###########
 # GLOBALS #
 ###########
 # Default Vars
-DEFAULT_RULES_LOCATION='/action/lib/.automation' # Default rules files location
-GITHUB_API_URL='https://api.github.com'          # GitHub API root url
+DEFAULT_RULES_LOCATION='/action/lib/.automation'                                         # Default rules files location
+GITHUB_API_URL='https://api.github.com'                                                  # GitHub API root url
 # Ansible Vars
-ANSIBLE_FILE_NAME='.ansible-lint.yml'                                 # Name of the file
-ANSIBLE_LINTER_RULES="${DEFAULT_RULES_LOCATION}/${ANSIBLE_FILE_NAME}" # Path to the Ansible lint rules
+ANSIBLE_FILE_NAME='.ansible-lint.yml'                                                    # Name of the file
+ANSIBLE_LINTER_RULES="${DEFAULT_RULES_LOCATION}/${ANSIBLE_FILE_NAME}"                    # Path to the Ansible lint rules
 # Azure Resource Manager Vars
-ARM_FILE_NAME='.arm-ttk.psd1'                                 # Name of the file
-ARM_LINTER_RULES="${DEFAULT_RULES_LOCATION}/${ARM_FILE_NAME}" # Path to the ARM lint rules
+ARM_FILE_NAME='.arm-ttk.psd1'                                                            # Name of the file
+ARM_LINTER_RULES="${DEFAULT_RULES_LOCATION}/${ARM_FILE_NAME}"                            # Path to the ARM lint rules
 # Cloudformation Vars
-CLOUDFORMATION_FILE_NAME='.cfnlintrc.yml'                                           # Name of the file
-CLOUDFORMATION_LINTER_RULES="${DEFAULT_RULES_LOCATION}/${CLOUDFORMATION_FILE_NAME}" # Path to the cloudformation lint rules
+CLOUDFORMATION_FILE_NAME='.cfnlintrc.yml'                                                # Name of the file
+CLOUDFORMATION_LINTER_RULES="${DEFAULT_RULES_LOCATION}/${CLOUDFORMATION_FILE_NAME}"      # Path to the cloudformation lint rules
 # Clojure Vars
-CLOJURE_FILE_NAME='.clj-kondo/config.edn'                             # Name of the file
-CLOJURE_LINTER_RULES="${DEFAULT_RULES_LOCATION}/${CLOJURE_FILE_NAME}" # Path to the Clojure lint rules
+CLOJURE_FILE_NAME='.clj-kondo/config.edn'                                                # Name of the file
+CLOJURE_LINTER_RULES="${DEFAULT_RULES_LOCATION}/${CLOJURE_FILE_NAME}"                    # Path to the Clojure lint rules
 # Coffee Vars
-COFFEE_FILE_NAME='.coffee-lint.json'                                      # Name of the file
-COFFEESCRIPT_LINTER_RULES="${DEFAULT_RULES_LOCATION}/${COFFEE_FILE_NAME}" # Path to the coffeescript lint rules
+COFFEE_FILE_NAME='.coffee-lint.json'                                                     # Name of the file
+COFFEESCRIPT_LINTER_RULES="${DEFAULT_RULES_LOCATION}/${COFFEE_FILE_NAME}"                # Path to the coffeescript lint rules
 # CSS Vars
-CSS_FILE_NAME='.stylelintrc.json'                             # Name of the file
-CSS_LINTER_RULES="${DEFAULT_RULES_LOCATION}/${CSS_FILE_NAME}" # Path to the CSS lint rules
+CSS_FILE_NAME='.stylelintrc.json'                                                        # Name of the file
+CSS_LINTER_RULES="${DEFAULT_RULES_LOCATION}/${CSS_FILE_NAME}"                            # Path to the CSS lint rules
 # Dart Vars
-DART_FILE_NAME='analysis_options.yml'                           # Name of the file
-DART_LINTER_RULES="${DEFAULT_RULES_LOCATION}/${DART_FILE_NAME}" # Path to the DART lint rules
+DART_FILE_NAME='analysis_options.yml'                                                    # Name of the file
+DART_LINTER_RULES="${DEFAULT_RULES_LOCATION}/${DART_FILE_NAME}"                          # Path to the DART lint rules
 # Docker Vars
-DOCKERFILE_NAME='.dockerfilelintrc'                                    # Name of the file
-DOCKERFILE_LINTER_RULES="${DEFAULT_RULES_LOCATION}/${DOCKERFILE_NAME}" # Path to the Docker lint rules
+DOCKERFILE_NAME='.dockerfilelintrc'                                                      # Name of the file
+DOCKERFILE_LINTER_RULES="${DEFAULT_RULES_LOCATION}/${DOCKERFILE_NAME}"                   # Path to the Docker lint rules
 # Dockerfile Hadolint
 DOCKERFILE_HADOLINT_NAME='.hadolint.yml'                                                 # Name of the file
 DOCKERFILE_HADOLINT_LINTER_RULES="${DEFAULT_RULES_LOCATION}/${DOCKERFILE_HADOLINT_NAME}" # Path to the Docker lint rules
 # Golang Vars
-GO_FILE_NAME='.golangci.yml'                                # Name of the file
-GO_LINTER_RULES="${DEFAULT_RULES_LOCATION}/${GO_FILE_NAME}" # Path to the Go lint rules
+GO_FILE_NAME='.golangci.yml'                                                # Name of the file
+GO_LINTER_RULES="${DEFAULT_RULES_LOCATION}/${GO_FILE_NAME}"                 # Path to the Go lint rules
 # Groovy Vars
-GROOVY_FILE_NAME='.groovylintrc.json'                               # Name of the file
-GROOVY_LINTER_RULES="${DEFAULT_RULES_LOCATION}/${GROOVY_FILE_NAME}" # Path to the Groovy lint rules
+GROOVY_FILE_NAME='.groovylintrc.json'                                       # Name of the file
+GROOVY_LINTER_RULES="${DEFAULT_RULES_LOCATION}/${GROOVY_FILE_NAME}"         # Path to the Groovy lint rules
 # HTML Vars
-HTML_FILE_NAME='.htmlhintrc'                                    # Name of the file
-HTML_LINTER_RULES="${DEFAULT_RULES_LOCATION}/${HTML_FILE_NAME}" # Path to the CSS lint rules
+HTML_FILE_NAME='.htmlhintrc'                                                # Name of the file
+HTML_LINTER_RULES="${DEFAULT_RULES_LOCATION}/${HTML_FILE_NAME}"             # Path to the CSS lint rules
 # Java Vars
-JAVA_FILE_NAME="sun_checks.xml"                                 # Name of the Java config file
-JAVA_LINTER_RULES="${DEFAULT_RULES_LOCATION}/${JAVA_FILE_NAME}" # Path to the Java lint rules
+JAVA_FILE_NAME="sun_checks.xml"                                             # Name of the Java config file
+JAVA_LINTER_RULES="${DEFAULT_RULES_LOCATION}/${JAVA_FILE_NAME}"             # Path to the Java lint rules
 # Javascript Vars
 JAVASCRIPT_FILE_NAME="${JAVASCRIPT_ES_CONFIG_FILE:-.eslintrc.yml}"          # Name of the file
 JAVASCRIPT_LINTER_RULES="${DEFAULT_RULES_LOCATION}/${JAVASCRIPT_FILE_NAME}" # Path to the Javascript lint rules
 JAVASCRIPT_STANDARD_LINTER_RULES=''                                         # ENV string to pass when running js standard
 # Default linter path
-LINTER_RULES_PATH="${LINTER_RULES_PATH:-.github/linters}" # Linter Path Directory
+LINTER_RULES_PATH="${LINTER_RULES_PATH:-.github/linters}"               # Linter Path Directory
 # Lua Vars
-LUA_FILE_NAME='.luacheckrc'                                   # Name of the file
-LUA_LINTER_RULES="${DEFAULT_RULES_LOCATION}/${LUA_FILE_NAME}" # Path to the Lua lint rules
+LUA_FILE_NAME='.luacheckrc'                                             # Name of the file
+LUA_LINTER_RULES="${DEFAULT_RULES_LOCATION}/${LUA_FILE_NAME}"           # Path to the Lua lint rules
 # MD Vars
 MARKDOWN_FILE_NAME="${MARKDOWN_CONFIG_FILE:-.markdown-lint.yml}"        # Name of the file
 MARKDOWN_LINTER_RULES="${DEFAULT_RULES_LOCATION}/${MARKDOWN_FILE_NAME}" # Path to the markdown lint rules
@@ -104,22 +102,22 @@ if [ ! -f "$PHP_PSALM_LINTER_RULES" ]; then
   PHP_PSALM_LINTER_RULES="${DEFAULT_RULES_LOCATION}/${PHP_PSALM_FILE_NAME}" # Path to the Psalm lint rules
 fi
 # Powershell Vars
-POWERSHELL_FILE_NAME='.powershell-psscriptanalyzer.psd1'                    # Name of the file
-POWERSHELL_LINTER_RULES="${DEFAULT_RULES_LOCATION}/${POWERSHELL_FILE_NAME}" # Path to the Powershell lint rules
+POWERSHELL_FILE_NAME='.powershell-psscriptanalyzer.psd1'                          # Name of the file
+POWERSHELL_LINTER_RULES="${DEFAULT_RULES_LOCATION}/${POWERSHELL_FILE_NAME}"       # Path to the Powershell lint rules
 # Protocol Buffers Vars
-PROTOBUF_FILE_NAME='.protolintrc.yml'                                   # Name of the file
-PROTOBUF_LINTER_RULES="${DEFAULT_RULES_LOCATION}/${PROTOBUF_FILE_NAME}" # Path to the Protocol Buffers lint rules
+PROTOBUF_FILE_NAME='.protolintrc.yml'                                             # Name of the file
+PROTOBUF_LINTER_RULES="${DEFAULT_RULES_LOCATION}/${PROTOBUF_FILE_NAME}"           # Path to the Protocol Buffers lint rules
 # Python Vars
 PYTHON_PYLINT_FILE_NAME="${PYTHON_PYLINT_CONFIG_FILE:-.python-lint}"              # Name of the file
 PYTHON_PYLINT_LINTER_RULES="${DEFAULT_RULES_LOCATION}/${PYTHON_PYLINT_FILE_NAME}" # Path to the python lint rules
 PYTHON_FLAKE8_FILE_NAME="${PYTHON_FLAKE8_CONFIG_FILE:-.flake8}"                   # Name of the file
 PYTHON_FLAKE8_LINTER_RULES="${DEFAULT_RULES_LOCATION}/${PYTHON_FLAKE8_FILE_NAME}" # Path to the python lint rules
 # Ruby Vars
-RUBY_FILE_NAME="${RUBY_CONFIG_FILE:-.ruby-lint.yml}"            # Name of the file
-RUBY_LINTER_RULES="${DEFAULT_RULES_LOCATION}/${RUBY_FILE_NAME}" # Path to the ruby lint rules
+RUBY_FILE_NAME="${RUBY_CONFIG_FILE:-.ruby-lint.yml}"                        # Name of the file
+RUBY_LINTER_RULES="${DEFAULT_RULES_LOCATION}/${RUBY_FILE_NAME}"             # Path to the ruby lint rules
 # Terraform Vars
-TERRAFORM_FILE_NAME='.tflint.hcl'                                         # Name of the file
-TERRAFORM_LINTER_RULES="${DEFAULT_RULES_LOCATION}/${TERRAFORM_FILE_NAME}" # Path to the Terraform lint rules
+TERRAFORM_FILE_NAME='.tflint.hcl'                                           # Name of the file
+TERRAFORM_LINTER_RULES="${DEFAULT_RULES_LOCATION}/${TERRAFORM_FILE_NAME}"   # Path to the Terraform lint rules
 # Typescript Vars
 TYPESCRIPT_FILE_NAME="${TYPESCRIPT_ES_CONFIG_FILE:-.eslintrc.yml}"          # Name of the file
 TYPESCRIPT_LINTER_RULES="${DEFAULT_RULES_LOCATION}/${TYPESCRIPT_FILE_NAME}" # Path to the Typescript lint rules
@@ -150,7 +148,7 @@ LANGUAGE_ARRAY=('ANSIBLE' 'ARM' 'BASH' 'CLOUDFORMATION' 'CLOJURE' 'COFFEESCRIPT'
 ############################################
 # Array for all languages that were linted #
 ############################################
-LINTED_LANGUAGES_ARRAY=() # Will be filled at run time with all languages that were linted
+LINTED_LANGUAGES_ARRAY=()                                            # Will be filled at run time with all languages that were linted
 
 ###################
 # GitHub ENV Vars #
@@ -194,7 +192,7 @@ VALIDATE_LUA="${VALIDATE_LUA}"                                       # Boolean t
 VALIDATE_MARKDOWN="${VALIDATE_MD:-}"                                 # Boolean to validate language
 VALIDATE_OPENAPI="${VALIDATE_OPENAPI}"                               # Boolean to validate language
 VALIDATE_PERL="${VALIDATE_PERL}"                                     # Boolean to validate language
-VALIDATE_PHP_BUILTIN="${VALIDATE_PHP:-$VALIDATE_PHP_BUILTIN}"         # Boolean to validate language
+VALIDATE_PHP_BUILTIN="${VALIDATE_PHP:-$VALIDATE_PHP_BUILTIN}"        # Boolean to validate language
 VALIDATE_PHP_PHPCS="${VALIDATE_PHP_PHPCS}"                           # Boolean to validate language
 VALIDATE_PHP_PHPSTAN="${VALIDATE_PHP_PHPSTAN}"                       # Boolean to validate language
 VALIDATE_PHP_PSALM="${VALIDATE_PHP_PSALM}"                           # Boolean to validate language
@@ -236,27 +234,27 @@ export LOG_VERBOSE
 ################
 # Default Vars #
 ################
-DEFAULT_VALIDATE_ALL_CODEBASE='true'                # Default value for validate all files
-DEFAULT_WORKSPACE="${DEFAULT_WORKSPACE:-/tmp/lint}" # Default workspace if running locally
-DEFAULT_RUN_LOCAL='false'                           # Default value for debugging locally
-DEFAULT_TEST_CASE_RUN='false'                       # Flag to tell code to run only test cases
-DEFAULT_IFS="${IFS}"                                # Get the Default IFS for updating
+DEFAULT_VALIDATE_ALL_CODEBASE='true'                         # Default value for validate all files
+DEFAULT_WORKSPACE="${DEFAULT_WORKSPACE:-/tmp/lint}"          # Default workspace if running locally
+DEFAULT_RUN_LOCAL='false'                                    # Default value for debugging locally
+DEFAULT_TEST_CASE_RUN='false'                                # Flag to tell code to run only test cases
+DEFAULT_IFS="${IFS}"                                         # Get the Default IFS for updating
 
 ###############################################################
 # Default Vars that are called in Subs and need to be ignored #
 ###############################################################
-DEFAULT_DISABLE_ERRORS='false'                          # Default to enabling errors
-export DEFAULT_DISABLE_ERRORS                           # Workaround SC2034
-RAW_FILE_ARRAY=()                                       # Array of all files that were changed
-export RAW_FILE_ARRAY                                   # Workaround SC2034
-READ_ONLY_CHANGE_FLAG=0                                 # Flag set to 1 if files changed are not txt or md
-export READ_ONLY_CHANGE_FLAG                            # Workaround SC2034
-TEST_CASE_FOLDER='.automation/test'                     # Folder for test cases we should always ignore
-export TEST_CASE_FOLDER                                 # Workaround SC2034
-DEFAULT_ANSIBLE_DIRECTORY="${GITHUB_WORKSPACE}/ansible" # Default Ansible Directory
-export DEFAULT_ANSIBLE_DIRECTORY                        # Workaround SC2034
-WARNING_ARRAY_TEST=()                                   # Array of warning linters that did not have an expected test result.
-export WARNING_ARRAY_TEST                               # Workaround SC2034
+DEFAULT_DISABLE_ERRORS='false'                               # Default to enabling errors
+export DEFAULT_DISABLE_ERRORS                                # Workaround SC2034
+RAW_FILE_ARRAY=()                                            # Array of all files that were changed
+export RAW_FILE_ARRAY                                        # Workaround SC2034
+READ_ONLY_CHANGE_FLAG=0                                      # Flag set to 1 if files changed are not txt or md
+export READ_ONLY_CHANGE_FLAG                                 # Workaround SC2034
+TEST_CASE_FOLDER='.automation/test'                          # Folder for test cases we should always ignore
+export TEST_CASE_FOLDER                                      # Workaround SC2034
+DEFAULT_ANSIBLE_DIRECTORY="${GITHUB_WORKSPACE}/ansible"      # Default Ansible Directory
+export DEFAULT_ANSIBLE_DIRECTORY                             # Workaround SC2034
+WARNING_ARRAY_TEST=()                                        # Array of warning linters that did not have an expected test result.
+export WARNING_ARRAY_TEST                                    # Workaround SC2034
 
 ##############
 # Format     #
@@ -269,46 +267,46 @@ REPORT_OUTPUT_FOLDER="${DEFAULT_WORKSPACE}/${OUTPUT_FOLDER}" # Location for the 
 ##########################
 # Array of changed files #
 ##########################
-FILE_ARRAY_ARM=()                 # Array of files to check
-FILE_ARRAY_BASH=()                # Array of files to check
-FILE_ARRAY_CLOUDFORMATION=()      # Array of files to check
-FILE_ARRAY_CLOJURE=()             # Array of files to check
-FILE_ARRAY_COFFEESCRIPT=()        # Array of files to check
-FILE_ARRAY_CSS=()                 # Array of files to check
-FILE_ARRAY_DART=()                # Array of files to check
-FILE_ARRAY_DOCKERFILE=()          # Array of files to check
-FILE_ARRAY_ENV=()                 # Array of files to check
-FILE_ARRAY_GO=()                  # Array of files to check
-FILE_ARRAY_GROOVY=()              # Array of files to check
-FILE_ARRAY_HTML=()                # Array of files to check
-FILE_ARRAY_JAVA=()                # Array of files to check
-FILE_ARRAY_JAVASCRIPT_ES=()       # Array of files to check
-FILE_ARRAY_JAVASCRIPT_STANDARD=() # Array of files to check
-FILE_ARRAY_JSON=()                # Array of files to check
-FILE_ARRAY_JSX=()                 # Array of files to check
-FILE_ARRAY_KOTLIN=()              # Array of files to check
-FILE_ARRAY_LUA=()                 # Array of files to check
-FILE_ARRAY_MARKDOWN=()            # Array of files to check
-FILE_ARRAY_OPENAPI=()             # Array of files to check
-FILE_ARRAY_PERL=()                # Array of files to check
-FILE_ARRAY_PHP_BUILTIN=()         # Array of files to check
-FILE_ARRAY_PHP_PHPCS=()           # Array of files to check
-FILE_ARRAY_PHP_PHPSTAN=()         # Array of files to check
-FILE_ARRAY_PHP_PSALM=()           # Array of files to check
-FILE_ARRAY_POWERSHELL=()          # Array of files to check
-FILE_ARRAY_PROTOBUF=()            # Array of files to check
-FILE_ARRAY_PYTHON_PYLINT=()       # Array of files to check
-FILE_ARRAY_PYTHON_FLAKE8=()       # Array of files to check
-FILE_ARRAY_RAKU=()                # Array of files to check
-FILE_ARRAY_RUBY=()                # Array of files to check
-FILE_ARRAY_STATES=()              # Array of files to check
-FILE_ARRAY_SQL=()                 # Array of files to check
-FILE_ARRAY_TERRAFORM=()           # Array of files to check
-FILE_ARRAY_TSX=()                 # Array of files to check
-FILE_ARRAY_TYPESCRIPT_ES=()       # Array of files to check
-FILE_ARRAY_TYPESCRIPT_STANDARD=() # Array of files to check
-FILE_ARRAY_XML=()                 # Array of files to check
-FILE_ARRAY_YAML=()                # Array of files to check
+FILE_ARRAY_ARM=()                       # Array of files to check
+FILE_ARRAY_BASH=()                      # Array of files to check
+FILE_ARRAY_CLOUDFORMATION=()            # Array of files to check
+FILE_ARRAY_CLOJURE=()                   # Array of files to check
+FILE_ARRAY_COFFEESCRIPT=()              # Array of files to check
+FILE_ARRAY_CSS=()                       # Array of files to check
+FILE_ARRAY_DART=()                      # Array of files to check
+FILE_ARRAY_DOCKERFILE=()                # Array of files to check
+FILE_ARRAY_ENV=()                       # Array of files to check
+FILE_ARRAY_GO=()                        # Array of files to check
+FILE_ARRAY_GROOVY=()                    # Array of files to check
+FILE_ARRAY_HTML=()                      # Array of files to check
+FILE_ARRAY_JAVA=()                      # Array of files to check
+FILE_ARRAY_JAVASCRIPT_ES=()             # Array of files to check
+FILE_ARRAY_JAVASCRIPT_STANDARD=()       # Array of files to check
+FILE_ARRAY_JSON=()                      # Array of files to check
+FILE_ARRAY_JSX=()                       # Array of files to check
+FILE_ARRAY_KOTLIN=()                    # Array of files to check
+FILE_ARRAY_LUA=()                       # Array of files to check
+FILE_ARRAY_MARKDOWN=()                  # Array of files to check
+FILE_ARRAY_OPENAPI=()                   # Array of files to check
+FILE_ARRAY_PERL=()                      # Array of files to check
+FILE_ARRAY_PHP_BUILTIN=()               # Array of files to check
+FILE_ARRAY_PHP_PHPCS=()                 # Array of files to check
+FILE_ARRAY_PHP_PHPSTAN=()               # Array of files to check
+FILE_ARRAY_PHP_PSALM=()                 # Array of files to check
+FILE_ARRAY_POWERSHELL=()                # Array of files to check
+FILE_ARRAY_PROTOBUF=()                  # Array of files to check
+FILE_ARRAY_PYTHON_PYLINT=()             # Array of files to check
+FILE_ARRAY_PYTHON_FLAKE8=()             # Array of files to check
+FILE_ARRAY_RAKU=()                      # Array of files to check
+FILE_ARRAY_RUBY=()                      # Array of files to check
+FILE_ARRAY_STATES=()                    # Array of files to check
+FILE_ARRAY_SQL=()                       # Array of files to check
+FILE_ARRAY_TERRAFORM=()                 # Array of files to check
+FILE_ARRAY_TSX=()                       # Array of files to check
+FILE_ARRAY_TYPESCRIPT_ES=()             # Array of files to check
+FILE_ARRAY_TYPESCRIPT_STANDARD=()       # Array of files to check
+FILE_ARRAY_XML=()                       # Array of files to check
+FILE_ARRAY_YAML=()                      # Array of files to check
 
 ############
 # Counters #
@@ -537,10 +535,10 @@ GetLinterRules() {
         eval "${LANGUAGE_LINTER_RULES}=${GITHUB_WORKSPACE}/${LINTER_RULES_PATH}/${SECONDARY_FILE_NAME}"
       fi
     fi
-      ########################################################
-      # No user default provided, using the template default #
-      ########################################################
-      debug "  -> Codebase does NOT have file:[${LINTER_RULES_PATH}/${!LANGUAGE_FILE_NAME}], using Default rules at:[${!LANGUAGE_LINTER_RULES}]"
+    ########################################################
+    # No user default provided, using the template default #
+    ########################################################
+    debug "  -> Codebase does NOT have file:[${LINTER_RULES_PATH}/${!LANGUAGE_FILE_NAME}], using Default rules at:[${!LANGUAGE_LINTER_RULES}]"
   fi
 }
 ################################################################################
@@ -631,7 +629,7 @@ DetectOpenAPIFile() {
   ###############################
   # Check the file for keywords #
   ###############################
-  grep -E '"openapi":|"swagger":|^openapi:|^swagger:' "${FILE}" > /dev/null
+  grep -E '"openapi":|"swagger":|^openapi:|^swagger:' "${FILE}" >/dev/null
 
   #######################
   # Load the error code #
@@ -664,7 +662,7 @@ DetectARMFile() {
   ###############################
   # Check the file for keywords #
   ###############################
-  grep -E 'schema.management.azure.com' "${FILE}" > /dev/null
+  grep -E 'schema.management.azure.com' "${FILE}" >/dev/null
 
   #######################
   # Load the error code #
@@ -699,7 +697,7 @@ DetectCloudFormationFile() {
   #######################################
   # Check if file has AWS Template info #
   #######################################
-  if grep -q 'AWSTemplateFormatVersion' "${FILE}" > /dev/null; then
+  if grep -q 'AWSTemplateFormatVersion' "${FILE}" >/dev/null; then
     # Found it
     return 0
   fi
@@ -707,7 +705,7 @@ DetectCloudFormationFile() {
   #####################################
   # See if it contains AWS References #
   #####################################
-  if grep -q -E '(AWS|Alexa|Custom)::' "${FILE}" > /dev/null; then
+  if grep -q -E '(AWS|Alexa|Custom)::' "${FILE}" >/dev/null; then
     # Found it
     return 0
   fi
@@ -848,7 +846,7 @@ GetGitHubVars() {
     ######################
     # Get the GitHub Org #
     ######################
-    GITHUB_ORG=$(jq -r '.repository.owner.login' < "${GITHUB_EVENT_PATH}")
+    GITHUB_ORG=$(jq -r '.repository.owner.login' <"${GITHUB_EVENT_PATH}")
 
     ############################
     # Validate we have a value #
@@ -863,7 +861,7 @@ GetGitHubVars() {
     #######################
     # Get the GitHub Repo #
     #######################
-    GITHUB_REPO=$(jq -r '.repository.name' < "${GITHUB_EVENT_PATH}")
+    GITHUB_REPO=$(jq -r '.repository.name' <"${GITHUB_EVENT_PATH}")
 
     ############################
     # Validate we have a value #
@@ -1148,6 +1146,9 @@ if [ -n "${OUTPUT_FORMAT}" ]; then
     error "ERROR! Found ${REPORT_OUTPUT_FOLDER}"
     fatal "Please remove the folder and try again."
   fi
+
+  XUNIT_OUTPUT_FOLDER="${DEFAULT_WORKSPACE}/${OUTPUT_FOLDER}/test-reports"
+  mkdir -p "${XUNIT_OUTPUT_FOLDER}" # FIXME
 fi
 
 #######################
@@ -1272,7 +1273,7 @@ if [ "${VALIDATE_ARM}" == "true" ]; then
     ###############################################################################
     IFS=$'\n'
 
-    mapfile -t LIST_FILES < <(find "${GITHUB_WORKSPACE}" -path "*/node_modules" -prune -o -type f -regex ".*\.\(json\)\$" 2>&1)
+    mapfile -t LIST_FILES < <(find "${GITHUB_WORKSPACE}" -path "*/node_modules" -prune -o -type f -regex ".*\.\(json\)\$" -not -path "./${OUTPUT_FOLDER}}/*" 2>&1)
     for FILE in "${LIST_FILES[@]}"; do
       if DetectARMFile "${FILE}"; then
         FILE_ARRAY_ARM+=("${FILE}")
