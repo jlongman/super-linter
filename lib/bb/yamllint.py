@@ -20,11 +20,17 @@ class Parser(lint2bb_parser):
 
     def parse(self, messages):
         errors = []
-        raw_line = messages.readline().strip()
-        if raw_line is self.file:
+        raw_line = messages.readline()
+        if raw_line.strip() is self.file:
             # dedup
-            raw_line = messages.readline().strip()
+            raw_line = messages.readline()
+        import sys
         while raw_line != "":
+            raw_line = raw_line.strip()
+            print(raw_line, file=sys.stderr)
+            if raw_line == "":
+                raw_line = messages.readline()
+                continue
             parse_line = raw_line.split(None, 2)
             if len(parse_line) >= 3:
                 # print(parse_line)
@@ -44,6 +50,6 @@ class Parser(lint2bb_parser):
             # else:
             #     print(parse_line)
             #     print(raw_line)
-            raw_line = messages.readline().strip()
+            raw_line = messages.readline()
 
         return errors

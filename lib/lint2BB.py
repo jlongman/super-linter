@@ -71,8 +71,8 @@ def annotate_single(this_count, data):
 def annotate_batch(this_count, data):
     annotations = []
     for single_result in data:
-        annotations.append(get_annotation_document(single_result, this_count))
         this_count += 1
+        annotations.append(get_annotation_document(single_result, this_count))
 
     group_annotation_url = report_url + "/annotations"
     r = requests.post(
@@ -88,17 +88,23 @@ def annotate_batch(this_count, data):
 
 
 def get_annotation_document(data, this_count):
+    detail = data["message"]
+    if len(detail) > 2000:
+        detail = "{}...".format(detail[:1996])
     document = {
         'external_id': 'super-{linter}-{filetype}-{count}'.format(linter=linter, filetype=file_type, count=this_count),
         'title': '{linter} - {filetype}'.format(linter=linter, filetype=file_type),
         'summary': 'Super-linter/{linter} detected problem # {count}'.format(linter=linter, count=this_count),
-        'details': data["message"],
+        'details': detail,
         'annotation_type': 'CODE_SMELL',
         'reporter': 'superlint',
         'path': data['file']
     }
     if 'line' in data:
-        document['line'] = data['line']
+        if isinstance(data['line'], int) and int(data['line']) > 0:
+            document['line'] = data['line']
+        else:
+            print("Unexpected data['line']: {}".format(data['line']))
     if 'column' in data:
         document['column'] = data['column']
     document["data"] = [{
@@ -114,11 +120,11 @@ def get_annotation_document(data, this_count):
 if True:
     messages = sys.stdin
     linter = messages.readline().strip()
-    # print("file_name {}".format(linter))
+    print("file_name {}".format(linter), file=sys.stderr)
     file_type = messages.readline().strip()
     file_name = messages.readline().strip()
     count = int(messages.readline().strip())
-    # print("file_name {}".format(file_name))
+    print("file_name {}".format(file_name), file=sys.stderr)
     # load the correct module
 
     good = count > 0

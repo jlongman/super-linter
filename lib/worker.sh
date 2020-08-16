@@ -225,29 +225,6 @@ function LintCodebase() {
         (("ERRORS_FOUND_$FILE_TYPE++"))
         (("TOTAL_ERRORS_FOUND++"))
 
-
-
-        if [[ "$RUN_LOCAL" == "false" && "$BITBUCKET_CODENOTIFY" != "false" ]]; then
-          count_increase=$(
-         {
-            echo "$LINTER_NAME"
-            echo "$FILE_TYPE"
-            echo "$FILE"
-            echo "$TOTAL_ERRORS_FOUND"
-            echo "$LINT_CMD"
-          }  | python3 /action/lib/lint2BB.py)
-          echo "$count_increase"
-          if [ ${count_increase} -gt 0 ]; then
-            echo "total $TOTAL_ERRORS_FOUND - $count_increase"
-            TOTAL_ERRORS_FOUND="$count_increase"
-            echo "total $TOTAL_ERRORS_FOUND"
-
-          else
-            bitbucket_annotate
-            bitbucket_report "$TOTAL_ERRORS_FOUND"
-          fi
-        fi
-
         #######################################################
         # Store the linting as a temporary file in TAP format #
         #######################################################
@@ -261,6 +238,28 @@ function LintCodebase() {
             printf "  ---\n  message: %s\n  ...\n" "$DETAILED_MSG" >> "${TMPFILE}"
           fi
         fi
+        if [[ "$RUN_LOCAL" == "false" && "$BITBUCKET_CODENOTIFY" != "false" ]]; then
+          DETAILED_MSG=$(TransformBBDetails "$LINT_CMD")
+          count_increase=$(
+         {
+            echo "$LINTER_NAME"
+            echo "$FILE_TYPE"
+            echo "$FILE"
+            echo "$TOTAL_ERRORS_FOUND"
+            echo "$DETAILED_MSG"
+          }  | python3 /action/lib/lint2BB.py)
+          echo "$count_increase"
+          if [ ${count_increase} -gt 0 ]; then
+            echo "total $TOTAL_ERRORS_FOUND - $count_increase"
+            TOTAL_ERRORS_FOUND="$count_increase"
+            echo "total $TOTAL_ERRORS_FOUND"
+
+          else
+            bitbucket_annotate
+            bitbucket_report "$TOTAL_ERRORS_FOUND"
+          fi
+        fi
+
       else
         ###########
         # Success #
@@ -835,5 +834,17 @@ function TransformTAPDetails() {
     # Transform new lines to \\n, remove colours and colons #
     #########################################################
     echo "${DATA}" | awk 'BEGIN{RS="\n";ORS="\\n"}1' | sed -r "s/\x1B\[([0-9]{1,3}(;[0-9]{1,2})?)?[mGK]//g" | tr ':' ' '
+  fi
+}
+
+################################################################################
+#### Function TransformTAPDetails ##############################################
+function TransformBBDetails() {
+  DATA=$1
+  if [ -n "${DATA}" ] && [ "${OUTPUT_DETAILS}" == "detailed" ] ; then
+    #########################################################
+    # Transform new lines to \\n, remove colours and colons #
+    #########################################################
+    echo "${DATA}" | sed -r "s/\x1B\[([0-9]{1,3}(;[0-9]{1,2})?)?[mGK]//g"
   fi
 }

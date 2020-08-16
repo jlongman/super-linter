@@ -9,8 +9,14 @@ class Parser(lint2bb_parser):
         errors = []
         last_message = None
         raw_line = messages.readline()
-        line = -1 # error case
+        line = -1  # error case
+        import sys  # fixme remove sys w/ debugging
         while raw_line != "":
+            raw_line = raw_line.strip()
+            print(raw_line, file=sys.stderr)
+            if raw_line == "":
+                raw_line = messages.readline()
+                continue
             if raw_line.startswith("In "):
                 if last_message is not None:
                     errors.append({
