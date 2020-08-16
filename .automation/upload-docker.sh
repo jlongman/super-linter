@@ -29,17 +29,21 @@ DOCKERFILE_PATH="${DOCKERFILE_PATH}"   # Path to the Dockerfile to be uploaded
 MAJOR_TAG=''                           # Major tag version if we need to update it
 UPDATE_MAJOR_TAG=0                     # Flag to deploy the major tag version as well
 
+#########################
+# Source Function Files #
+#########################
+# shellcheck source=/dev/null
+source "${GITHUB_WORKSPACE}/lib/log.sh" # Source the function script(s)
+
 ################################################################################
 ############################ FUNCTIONS BELOW ###################################
 ################################################################################
 ################################################################################
 #### Function Header ###########################################################
 Header() {
-  echo ""
-  echo "-------------------------------------------------------"
-  echo "---- GitHub Actions Upload image to [$REGISTRY] ----"
-  echo "-------------------------------------------------------"
-  echo ""
+  info "-------------------------------------------------------"
+  info "---- GitHub Actions Upload image to [${REGISTRY}] ----"
+  info "-------------------------------------------------------"
 }
 ################################################################################
 #### Function ValidateInput ####################################################
@@ -48,122 +52,112 @@ ValidateInput() {
   ################
   # Print header #
   ################
-  echo ""
-  echo "----------------------------------------------"
-  echo "Gathering variables..."
-  echo "----------------------------------------------"
-  echo ""
+  info "----------------------------------------------"
+  info "Gathering variables..."
+  info "----------------------------------------------"
 
   #############################
   # Validate GITHUB_WORKSPACE #
   #############################
-  if [ -z "$GITHUB_WORKSPACE" ]; then
-    echo -e "${NC}${B[R]}${F[W]}ERROR!${NC} Failed to get [GITHUB_WORKSPACE]!${NC}"
-    echo -e "${NC}${B[R]}${F[W]}ERROR:${NC}[$GITHUB_WORKSPACE]${NC}"
-    exit 1
+  if [ -z "${GITHUB_WORKSPACE}" ]; then
+    error "Failed to get [GITHUB_WORKSPACE]!"
+    fatal "[${GITHUB_WORKSPACE}]"
   else
-    echo -e "${NC}${F[B]}Successfully found:${F[W]}[GITHUB_WORKSPACE]${F[B]}, value:${F[W]}[$GITHUB_WORKSPACE]${NC}"
+    info "Successfully found:${F[W]}[GITHUB_WORKSPACE]${F[B]}, value:${F[W]}[${GITHUB_WORKSPACE}]"
   fi
 
   #####################
   # Validate REGISTRY #
   #####################
-  if [ -z "$REGISTRY" ]; then
-    echo -e "${NC}${B[R]}${F[W]}ERROR!${NC} Failed to get [REGISTRY]!${NC}"
-    echo -e "${NC}${B[R]}${F[W]}ERROR:${NC}[$REGISTRY]${NC}"
-    exit 1
+  if [ -z "${REGISTRY}" ]; then
+    error "Failed to get [REGISTRY]!"
+    fatal "[${REGISTRY}]"
   else
-    echo -e "${NC}${F[B]}Successfully found:${F[W]}[REGISTRY]${F[B]}, value:${F[W]}[$REGISTRY]${NC}"
+    info "Successfully found:${F[W]}[REGISTRY]${F[B]}, value:${F[W]}[${REGISTRY}]"
   fi
 
   #####################################################
   # See if we need values for GitHub package Registry #
   #####################################################
-  if [[ $REGISTRY == "GPR" ]]; then
+  if [[ ${REGISTRY} == "GPR" ]]; then
     #########################
     # Validate GPR_USERNAME #
     #########################
-    if [ -z "$GPR_USERNAME" ]; then
-      echo -e "${NC}${B[R]}${F[W]}ERROR!${NC} Failed to get [GPR_USERNAME]!${NC}"
-      echo -e "${NC}${B[R]}${F[W]}ERROR:${NC}[$GPR_USERNAME]${NC}"
-      exit 1
+    if [ -z "${GPR_USERNAME}" ]; then
+      error "Failed to get [GPR_USERNAME]!"
+      fatal "[${GPR_USERNAME}]"
     else
-      echo -e "${NC}${F[B]}Successfully found:${F[W]}[GPR_USERNAME]${F[B]}, value:${F[W]}[$GPR_USERNAME]${NC}"
+      info "Successfully found:${F[W]}[GPR_USERNAME]${F[B]}, value:${F[W]}[${GPR_USERNAME}]"
     fi
 
     ######################
     # Validate GPR_TOKEN #
     ######################
-    if [ -z "$GPR_TOKEN" ]; then
-      echo -e "${NC}${B[R]}${F[W]}ERROR!${NC} Failed to get [GPR_TOKEN]!${NC}"
-      echo -e "${NC}${B[R]}${F[W]}ERROR:${NC}[$GPR_TOKEN]${NC}"
-      exit 1
+    if [ -z "${GPR_TOKEN}" ]; then
+      error "Failed to get [GPR_TOKEN]!"
+      fatal "[${GPR_TOKEN}]"
     else
-      echo -e "${NC}${F[B]}Successfully found:${F[W]}[GPR_TOKEN]${F[B]}, value:${F[W]}[********]${NC}"
+      info "Successfully found:${F[W]}[GPR_TOKEN]${F[B]}, value:${F[W]}[********]"
     fi
   ########################################
   # See if we need values for Ducker hub #
   ########################################
-  elif [[ $REGISTRY == "Docker" ]]; then
+  elif [[ ${REGISTRY} == "Docker" ]]; then
     ############################
     # Validate DOCKER_USERNAME #
     ############################
-    if [ -z "$DOCKER_USERNAME" ]; then
-      echo -e "${NC}${B[R]}${F[W]}ERROR!${NC} Failed to get [DOCKER_USERNAME]!${NC}"
-      echo -e "${NC}${B[R]}${F[W]}ERROR:${NC}[$DOCKER_USERNAME]${NC}"
-      exit 1
+    if [ -z "${DOCKER_USERNAME}" ]; then
+      error "Failed to get [DOCKER_USERNAME]!"
+      fatal "[${DOCKER_USERNAME}]"
     else
-      echo -e "${NC}${F[B]}Successfully found:${F[W]}[DOCKER_USERNAME]${F[B]}, value:${F[W]}[$DOCKER_USERNAME]${NC}"
+      info "Successfully found:${F[W]}[DOCKER_USERNAME]${F[B]}, value:${F[W]}[${DOCKER_USERNAME}]"
     fi
 
     ############################
     # Validate DOCKER_PASSWORD #
     ############################
-    if [ -z "$DOCKER_PASSWORD" ]; then
-      echo -e "${NC}${B[R]}${F[W]}ERROR!${NC} Failed to get [DOCKER_PASSWORD]!${NC}"
-      echo -e "${NC}${B[R]}${F[W]}ERROR:${NC}[$DOCKER_PASSWORD]${NC}"
-      exit 1
+    if [ -z "${DOCKER_PASSWORD}" ]; then
+      error "Failed to get [DOCKER_PASSWORD]!"
+      fatal "[${DOCKER_PASSWORD}]"
     else
-      echo -e "${NC}${F[B]}Successfully found:${F[W]}[DOCKER_PASSWORD]${F[B]}, value:${F[B]}[********]${NC}"
+      info "Successfully found:${F[W]}[DOCKER_PASSWORD]${F[B]}, value:${F[B]}[********]"
     fi
   ###########################################
   # We were not passed a registry to update #
   ###########################################
   else
-    echo -e "${NC}${B[R]}${F[W]}ERROR!${NC} Failed to find a valid registry!${NC}"
-    echo "Registry:[$REGISTRY]"
-    exit 1
+    error "Failed to find a valid registry!"
+    fatal "Registry:[${REGISTRY}]"
   fi
 
   #######################
   # Validate IMAGE_REPO #
   #######################
-  if [ -z "$IMAGE_REPO" ]; then
-    echo -e "${NC}${B[R]}${F[W]}ERROR!${NC} Failed to get [IMAGE_REPO]!${NC}"
-    echo -e "${NC}${B[R]}${F[W]}ERROR:${NC}[$IMAGE_REPO]${NC}"
-    exit 1
+  if [ -z "${IMAGE_REPO}" ]; then
+    error "Failed to get [IMAGE_REPO]!"
+    fatal "[${IMAGE_REPO}]"
   else
-    echo -e "${NC}${F[B]}Successfully found:${F[W]}[IMAGE_REPO]${F[B]}, value:${F[W]}[$IMAGE_REPO]${NC}"
+    info "Successfully found:${F[W]}[IMAGE_REPO]${F[B]}, value:${F[W]}[${IMAGE_REPO}]"
     ###############################################
     # Need to see if GPR registry and update name #
     ###############################################
-    if [[ $REGISTRY == "GPR" ]]; then
-      NAME="docker.pkg.github.com/$IMAGE_REPO/super-linter"
-      IMAGE_REPO="$NAME"
-      echo "Updated [IMAGE_REPO] to:[$IMAGE_REPO] for GPR"
+    if [[ ${REGISTRY} == "GPR" ]]; then
+      NAME="docker.pkg.github.com/${IMAGE_REPO}/super-linter"
+      IMAGE_REPO="${NAME}"
+      info "Updated [IMAGE_REPO] to:[${IMAGE_REPO}] for GPR"
     fi
   fi
 
   ##########################
   # Validate IMAGE_VERSION #
   ##########################
-  if [ -z "$IMAGE_VERSION" ]; then
-    echo -e "${NC}${F[Y]}WARN!${NC} Failed to get [IMAGE_VERSION]!${NC}"
-    echo "Pulling from Branch Name..."
+  if [ -z "${IMAGE_VERSION}" ]; then
+    warn "Failed to get [IMAGE_VERSION]!"
+    info "Pulling from Branch Name..."
     ##############################
     # Get the name of the branch #
     ##############################
-    BRANCH_NAME=$(git -C "$GITHUB_WORKSPACE" branch --contains "$GITHUB_SHA" | awk '{print $2}' 2>&1)
+    BRANCH_NAME=$(git -C "${GITHUB_WORKSPACE}" branch --contains "${GITHUB_SHA}" | awk '{print ${2}}' 2>&1)
 
     #######################
     # Load the error code #
@@ -173,24 +167,23 @@ ValidateInput() {
     ##############################
     # Check the shell for errors #
     ##############################
-    if [ $ERROR_CODE -ne 0 ]; then
-      echo -e "${NC}${B[R]}${F[W]}ERROR!${NC} Failed to get branch name!${NC}"
-      echo -e "${NC}${B[R]}${F[W]}ERROR:${NC}[$BRANCH_NAME]${NC}"
-      exit 1
+    if [ ${ERROR_CODE} -ne 0 ]; then
+      error "Failed to get branch name!"
+      fatal "[${BRANCH_NAME}]"
     fi
 
     ##################################
     # Remove non alpha-numeric chars #
     ##################################
-    BRANCH_NAME=$(echo "$BRANCH_NAME" | tr -cd '[:alnum:]')
+    BRANCH_NAME=$(echo "${BRANCH_NAME}" | tr -cd '[:alnum:]')
 
     ############################################
     # Set the IMAGE_VERSION to the BRANCH_NAME #
     ############################################
-    IMAGE_VERSION="$BRANCH_NAME"
-    echo "Tag:[$IMAGE_VERSION]"
+    IMAGE_VERSION="${BRANCH_NAME}"
+    info "Tag:[${IMAGE_VERSION}]"
   else
-    echo -e "${NC}${F[B]}Successfully found:${F[W]}[IMAGE_VERSION]${F[B]}, value:${F[W]}[$IMAGE_VERSION]${NC}"
+    info "Successfully found:${F[W]}[IMAGE_VERSION]${F[B]}, value:${F[W]}[${IMAGE_VERSION}]"
   fi
 
   ##################################
@@ -201,31 +194,30 @@ ValidateInput() {
   ######################################################################
   # Check if this is a latest to a versioned release at create new tag #
   ######################################################################
-  if [[ $IMAGE_VERSION =~ $REGEX ]]; then
+  if [[ ${IMAGE_VERSION} =~ ${REGEX} ]]; then
     # Need to get the major version, and set flag to update
 
     #####################
     # Set the major tag #
     #####################
-    MAJOR_TAG=$(echo "$IMAGE_VERSION" | cut -d '.' -f1)
+    MAJOR_TAG=$(echo "${IMAGE_VERSION}" | cut -d '.' -f1)
 
     ###################################
     # Set flag for updating major tag #
     ###################################
     UPDATE_MAJOR_TAG=1
 
-    echo "- Also deploying a major tag of:[$MAJOR_TAG]"
+    info "- Also deploying a major tag of:[${MAJOR_TAG}]"
   fi
 
   ############################
   # Validate DOCKERFILE_PATH #
   ############################
-  if [ -z "$DOCKERFILE_PATH" ]; then
-    echo -e "${NC}${B[R]}${F[W]}ERROR!${NC} Failed to get [DOCKERFILE_PATH]!${NC}"
-    echo -e "${NC}${B[R]}${F[W]}ERROR:${NC}[$DOCKERFILE_PATH]${NC}"
-    exit 1
+  if [ -z "${DOCKERFILE_PATH}" ]; then
+    error "Failed to get [DOCKERFILE_PATH]!"
+    fatal "[${DOCKERFILE_PATH}]"
   else
-    echo -e "${NC}${F[B]}Successfully found:${F[W]}[DOCKERFILE_PATH]${F[B]}, value:${F[W]}[$DOCKERFILE_PATH]${NC}"
+    info "Successfully found:${F[W]}[DOCKERFILE_PATH]${F[B]}, value:${F[W]}[${DOCKERFILE_PATH}]"
   fi
 }
 ################################################################################
@@ -234,24 +226,22 @@ Authenticate() {
   ################
   # Pull in Vars #
   ################
-  USERNAME="$1" # Name to auth with
-  PASSWORD="$2" # Password to auth with
-  URL="$3"      # Url to auth towards
-  NAME="$4"     # name of the service
+  USERNAME="${1}" # Name to auth with
+  PASSWORD="${2}" # Password to auth with
+  URL="${3}"      # Url to auth towards
+  NAME="${4}"     # name of the service
 
   ################
   # Print header #
   ################
-  echo ""
-  echo "----------------------------------------------"
-  echo "Login to $NAME..."
-  echo "----------------------------------------------"
-  echo ""
+  info "----------------------------------------------"
+  info "Login to ${NAME}..."
+  info "----------------------------------------------"
 
   ###################
   # Auth to service #
   ###################
-  LOGIN_CMD=$(docker login "$URL" --username "$USERNAME" --password "$PASSWORD" 2>&1)
+  LOGIN_CMD=$(docker login "${URL}" --username "${USERNAME}" --password "${PASSWORD}" 2>&1)
 
   #######################
   # Load the error code #
@@ -261,14 +251,13 @@ Authenticate() {
   ##############################
   # Check the shell for errors #
   ##############################
-  if [ $ERROR_CODE -ne 0 ]; then
+  if [ ${ERROR_CODE} -ne 0 ]; then
     # ERROR
-    echo -e "${NC}${B[R]}${F[W]}ERROR!${NC} Failed to authenticate to $NAME!${NC}"
-    echo -e "${NC}${B[R]}${F[W]}ERROR:${NC}[$LOGIN_CMD]${NC}"
-    exit 1
+    error "Failed to authenticate to ${NAME}!"
+    fatal "[${LOGIN_CMD}]"
   else
     # SUCCESS
-    echo -e "${NC}${F[B]}Successfully authenticated to ${F[C]}$NAME${F[B]}!${NC}"
+    info "Successfully authenticated to ${F[C]}${NAME}${F[B]}!"
   fi
 }
 ################################################################################
@@ -277,27 +266,24 @@ BuildImage() {
   ################
   # Print header #
   ################
-  echo ""
-  echo "----------------------------------------------"
-  echo "Building the DockerFile image..."
-  echo "----------------------------------------------"
-  echo ""
+  info "----------------------------------------------"
+  info "Building the DockerFile image..."
+  info "----------------------------------------------"
 
   ################################
   # Validate the DOCKERFILE_PATH #
   ################################
-  if [ ! -f "$DOCKERFILE_PATH" ]; then
+  if [ ! -f "${DOCKERFILE_PATH}" ]; then
     # No file found
-    echo -e "${NC}${B[R]}${F[W]}ERROR!${NC} failed to find Dockerfile at:[$DOCKERFILE_PATH]${NC}"
-    echo "Please make sure you give full path!"
-    echo "Example:[/configs/Dockerfile] or [Dockerfile] if at root directory"
-    exit 1
+    error "failed to find Dockerfile at:[${DOCKERFILE_PATH}]"
+    error "Please make sure you give full path!"
+    fatal "Example:[/configs/Dockerfile] or [Dockerfile] if at root directory"
   fi
 
   ###################
   # Build the image #
   ###################
-  docker build --no-cache -t "$IMAGE_REPO:$IMAGE_VERSION" -f "$DOCKERFILE_PATH" . 2>&1
+  docker build --no-cache -t "${IMAGE_REPO}:${IMAGE_VERSION}" -f "${DOCKERFILE_PATH}" . 2>&1
 
   #######################
   # Load the error code #
@@ -307,21 +293,20 @@ BuildImage() {
   ##############################
   # Check the shell for errors #
   ##############################
-  if [ $ERROR_CODE -ne 0 ]; then
+  if [ ${ERROR_CODE} -ne 0 ]; then
     # ERROR
-    echo -e "${NC}${B[R]}${F[W]}ERROR!${NC} failed to [build] Dockerfile!${NC}"
-    exit 1
+    fatal "failed to [build] Dockerfile!"
   else
     # SUCCESS
-    echo -e "${NC}${F[B]}Successfully Built image!${NC}"
+    info "Successfully Built image!"
   fi
 
   ########################################################
   # Need to see if we need to tag a major update as well #
   ########################################################
-  if [ $UPDATE_MAJOR_TAG -eq 1 ]; then
+  if [ ${UPDATE_MAJOR_TAG} -eq 1 ]; then
     # Tag the image with the major tag as well
-    docker build -t "$IMAGE_REPO:$MAJOR_TAG" -f "$DOCKERFILE_PATH" . 2>&1
+    docker build -t "${IMAGE_REPO}:${MAJOR_TAG}" -f "${DOCKERFILE_PATH}" . 2>&1
 
     #######################
     # Load the error code #
@@ -331,13 +316,12 @@ BuildImage() {
     ##############################
     # Check the shell for errors #
     ##############################
-    if [ $ERROR_CODE -ne 0 ]; then
+    if [ ${ERROR_CODE} -ne 0 ]; then
       # ERROR
-      echo -e "${NC}${B[R]}${F[W]}ERROR!${NC} failed to [tag] Dockerfile!${NC}"
-      exit 1
+      fatal "failed to [tag] Dockerfile!"
     else
       # SUCCESS
-      echo -e "${NC}${F[B]}Successfully tagged image!${NC}"
+      info "Successfully tagged image!"
     fi
   fi
 }
@@ -347,16 +331,14 @@ UploadImage() {
   ################
   # Print header #
   ################
-  echo ""
-  echo "----------------------------------------------"
-  echo "Uploading the DockerFile image to $REGISTRY..."
-  echo "----------------------------------------------"
-  echo ""
+  info "----------------------------------------------"
+  info "Uploading the DockerFile image to ${REGISTRY}..."
+  info "----------------------------------------------"
 
   ############################################
   # Upload the docker image that was created #
   ############################################
-  docker push "$IMAGE_REPO:$IMAGE_VERSION" 2>&1
+  docker push "${IMAGE_REPO}:${IMAGE_VERSION}" 2>&1
 
   #######################
   # Load the error code #
@@ -366,20 +348,19 @@ UploadImage() {
   ##############################
   # Check the shell for errors #
   ##############################
-  if [ $ERROR_CODE -ne 0 ]; then
+  if [ ${ERROR_CODE} -ne 0 ]; then
     # ERROR
-    echo -e "${NC}${B[R]}${F[W]}ERROR!${NC} failed to [upload] Dockerfile!${NC}"
-    exit 1
+    fatal "failed to [upload] Dockerfile!"
   else
     # SUCCESS
-    echo -e "${NC}${F[B]}Successfully Uploaded Docker image:${F[W]}[$IMAGE_VERSION]${F[B]} to ${F[C]}$REGISTRY${F[B]}!${NC}"
+    info "Successfully Uploaded Docker image:${F[W]}[${IMAGE_VERSION}]${F[B]} to ${F[C]}${REGISTRY}${F[B]}!"
   fi
 
   #########################
   # Get Image information #
   #########################
   IFS=$'\n' # Set the delimit to newline
-  GET_INFO_CMD=$(docker images | grep "$IMAGE_REPO" | grep "$IMAGE_VERSION" 2>&1)
+  GET_INFO_CMD=$(docker images | grep "${IMAGE_REPO}" | grep "${IMAGE_VERSION}" 2>&1)
 
   #######################
   # Load the error code #
@@ -389,40 +370,39 @@ UploadImage() {
   ##############################
   # Check the shell for errors #
   ##############################
-  if [ $ERROR_CODE -ne 0 ]; then
+  if [ ${ERROR_CODE} -ne 0 ]; then
     # ERROR
-    echo -e "${NC}${B[R]}${F[W]}ERROR!${NC} Failed to get information about built Image!${NC}"
-    echo -e "${NC}${B[R]}${F[W]}ERROR:${NC}[$GET_INFO_CMD]${NC}"
-    exit 1
+    error "Failed to get information about built Image!"
+    fatal "[${GET_INFO_CMD}]"
   else
     ################
     # Get the data #
     ################
-    REPO=$(echo "$GET_INFO_CMD" | awk '{print $1}')
-    TAG=$(echo "$GET_INFO_CMD" | awk '{print $2}')
-    IMAGE_ID=$(echo "$GET_INFO_CMD" | awk '{print $3}')
+    REPO=$(echo "${GET_INFO_CMD}" | awk '{print ${1}}')
+    TAG=$(echo "${GET_INFO_CMD}" | awk '{print ${2}}')
+    IMAGE_ID=$(echo "${GET_INFO_CMD}" | awk '{print ${3}}')
     SIZE="${GET_INFO_CMD##* }"
 
     ###################
     # Print the goods #
     ###################
-    echo "----------------------------------------------"
-    echo "Docker Image Details:"
-    echo "Repository:[$REPO]"
-    echo "Tag:[$TAG]"
-    echo "Image_ID:[$IMAGE_ID]"
-    echo "Size:[$SIZE]"
-    echo "----------------------------------------------"
+    info "----------------------------------------------"
+    info "Docker Image Details:"
+    info "Repository:[${REPO}]"
+    info "Tag:[${TAG}]"
+    info "Image_ID:[${IMAGE_ID}]"
+    info "Size:[${SIZE}]"
+    info "----------------------------------------------"
   fi
 
   ###############################################################
   # Check if we need to upload the major tagged version as well #
   ###############################################################
-  if [ $UPDATE_MAJOR_TAG -eq 1 ]; then
+  if [ ${UPDATE_MAJOR_TAG} -eq 1 ]; then
     ############################################
     # Upload the docker image that was created #
     ############################################
-    docker push "$IMAGE_REPO:$MAJOR_TAG" 2>&1
+    docker push "${IMAGE_REPO}:${MAJOR_TAG}" 2>&1
 
     #######################
     # Load the error code #
@@ -432,24 +412,21 @@ UploadImage() {
     ##############################
     # Check the shell for errors #
     ##############################
-    if [ $ERROR_CODE -ne 0 ]; then
+    if [ ${ERROR_CODE} -ne 0 ]; then
       # ERROR
-      echo -e "${NC}${B[R]}${F[W]}ERROR!${NC} failed to [upload] MAJOR_TAG:[$MAJOR_TAG] Dockerfile!${NC}"
-      exit 1
+      fatal "failed to [upload] MAJOR_TAG:[${MAJOR_TAG}] Dockerfile!"
     else
       # SUCCESS
-      echo -e "${NC}${F[B]}Successfully Uploaded TAGOR_TAG:${F[W]}[$MAJOR_TAG]${F[B]} Docker image to ${F[C]}$REGISTRY${F[B]}!${NC}"
+      info "Successfully Uploaded TAG:${F[W]}[${MAJOR_TAG}]${F[B]} of Docker image to ${F[C]}${REGISTRY}${F[B]}!"
     fi
   fi
 }
 ################################################################################
 #### Function Footer ###########################################################
 Footer() {
-  echo ""
-  echo "-------------------------------------------------------"
-  echo "The step has completed"
-  echo "-------------------------------------------------------"
-  echo ""
+  info "-------------------------------------------------------"
+  info "The step has completed"
+  info "-------------------------------------------------------"
 }
 ################################################################################
 ################################## MAIN ########################################
@@ -473,24 +450,23 @@ BuildImage
 ######################
 # Login to DockerHub #
 ######################
-if [[ $REGISTRY == "Docker" ]]; then
+if [[ ${REGISTRY} == "Docker" ]]; then
   # Authenticate "Username" "Password" "Url" "Name"
-  Authenticate "$DOCKER_USERNAME" "$DOCKER_PASSWORD" "" "Dockerhub"
+  Authenticate "${DOCKER_USERNAME}" "${DOCKER_PASSWORD}" "" "Dockerhub"
 
 ####################################
 # Login to GitHub Package Registry #
 ####################################
-elif [[ $REGISTRY == "GPR" ]]; then
+elif [[ ${REGISTRY} == "GPR" ]]; then
   # Authenticate "Username" "Password" "Url" "Name"
-  Authenticate "$GPR_USERNAME" "$GPR_TOKEN" "https://docker.pkg.github.com" "GitHub Package Registry"
+  Authenticate "${GPR_USERNAME}" "${GPR_TOKEN}" "https://docker.pkg.github.com" "GitHub Package Registry"
 
 else
   #########
   # ERROR #
   #########
-  echo -e "${NC}${B[R]}${F[W]}ERROR!${NC} Registry not set correctly!${NC}"
-  echo "Registry:[$REGISTRY]"
-  exit 1
+  error "Registry not set correctly!"
+  fatal "Registry:[${REGISTRY}]"
 fi
 
 ####################
