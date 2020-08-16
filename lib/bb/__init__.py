@@ -1,3 +1,4 @@
+
 class lint2bb_parser:
 
     def __init__(self, linter, file_type, file):
