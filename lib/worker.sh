@@ -221,8 +221,7 @@ function LintCodebase() {
       # Load the error code #
       #######################
       ERROR_CODE=$?
-      ORIG_FILE="$FILE"
-      FILE=$(echo "${FILE}" | sed -e "s|${GITHUB_WORKSPACE}|.|") # TODO why this necessary?
+      FILE=$(FILE/"$GITHUB_WORKSPACE"/.) # TODO why this necessary?
 
       ##############################
       # Check the shell for errors #
@@ -261,7 +260,7 @@ function LintCodebase() {
           )
 
           debug "$count_increase"
-          if [ ${count_increase} -gt 0 ]; then
+          if [ "${count_increase}" -gt 0 ]; then
             info "total $TOTAL_ERRORS_FOUND - $count_increase"
             TOTAL_ERRORS_FOUND="$count_increase"
             info "total $TOTAL_ERRORS_FOUND"

@@ -67,3 +67,8 @@ typings/
 
 # default output report
 super-linter.report
+super-linter.log
+
+*.pyc
+__pycache__
+

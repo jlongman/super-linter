@@ -7,7 +7,8 @@ import sys
 # /tmp/lint/README.md:15:23 MD009/no-trailing-spaces Trailing spaces [Expected: 0 or 2; Actual: 1]
 # /tmp/lint/README.md:26:43 MD009/no-trailing-spaces Trailing spaces [Expected: 0 or 2; Actual: 1]
 # /tmp/lint/README.md:29:42 MD009/no-trailing-spaces Trailing spaces [Expected: 0 or 2; Actual: 1]
-# /tmp/lint/README.md:5 MD025/single-title/single-h1 Multiple top level headings in the same document [Context: "# CI Pipeline"]
+# /tmp/lint/README.md:5 MD025/single-title/single-h1 Multiple top level headings in the same document \
+#   [Context: "# CI Pipeline"]
 
 
 class Parser(lint2bb_parser):
@@ -34,12 +35,18 @@ class Parser(lint2bb_parser):
         :param raw_line:
         :return:
 
-        >>> Parser("a","b","c").process_line('/tmp/lint/README.md:29:42 MD009/no-trailing-spaces Trailing spaces [Expected: 0 or 2; Actual: 1]')
-        {'parser': 'a', 'fileType': 'b', 'file': 'c', 'line': 29, 'level': 'HIGH', 'message': 'MD009/no-trailing-spaces Trailing spaces [Expected: 0 or 2; Actual: 1]', 'severity': 'HIGH', 'column': 42}
-        >>> Parser("a","b","c").process_line('/tmp/lint/README.md:5 MD025/single-title/single-h1 Multiple top level headings in the same document [Context: "# CI Pipeline"]')
-        {'parser': 'a', 'fileType': 'b', 'file': 'c', 'line': 5, 'level': 'HIGH', 'message': 'MD025/single-title/single-h1 Multiple top level headings in the same document [Context: "# CI Pipeline"]', 'severity': 'HIGH'}
+        >>> Parser("a","b","c").process_line('/tmp/lint/README.md:29:42 MD009/no-trailing-spaces Trailing '\
+'spaces [Expected: 0 or 2; Actual: 1]')
+        {'parser': 'a', 'fileType': 'b', 'file': 'c', 'line': 29, 'level': 'HIGH', 'message': \
+'MD009/no-trailing-spaces Trailing spaces [Expected: 0 or 2; Actual: 1]', 'severity': 'HIGH', 'column': 42}
+        >>> Parser("a","b","c").process_line('/tmp/lint/README.md:5 MD025/single-title/single-h1 '\
+    'Multiple top level headings in the same document [Context: "# CI Pipeline"]')
+        {'parser': 'a', 'fileType': 'b', 'file': 'c', 'line': 5, 'level': 'HIGH', 'message': \
+'MD025/single-title/single-h1 Multiple top level headings in the same document [Context: "# CI Pipeline"]'\
+, 'severity': 'HIGH'}
         >>> Parser("a","b","c").process_line("x:999 xxx")
-        {'parser': 'a', 'fileType': 'b', 'file': 'c', 'line': 999, 'level': 'HIGH', 'message': 'xxx', 'severity': 'HIGH'}
+        {'parser': 'a', 'fileType': 'b', 'file': 'c', 'line': 999, 'level': 'HIGH', 'message': \
+'xxx', 'severity': 'HIGH'}
         """
         try:
             raw_line = raw_line.strip()

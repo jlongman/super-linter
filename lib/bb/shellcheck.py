@@ -14,7 +14,6 @@ class Parser(lint2bb_parser):
         last_summary = None
         raw_line = messages.readline()
         line = -1  # error case
-        import sys  # fixme remove sys w/ debugging
         while raw_line != "":
             raw_line = raw_line.strip()
             # print(raw_line, file=sys.stderr)
@@ -58,5 +57,4 @@ class Parser(lint2bb_parser):
 
 if __name__ == "__main__":
     import doctest
-
     doctest.testfile("shellcheck.doctest")

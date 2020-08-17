@@ -7,10 +7,10 @@ VALIDATE_ALL_CODEBASE=${VALIDATE_ALL_CODEBASE}
 OUTPUT_DETAILS="${OUTPUT_DETAILS:-detailed}"                   # What level of details. (simpler or detailed). Default simpler
 
 DEFAULT_WORKSPACE="${DEFAULT_WORKSPACE-$BITBUCKET_CLONE_DIR}" # Default workspace if running locally
+GITHUB_EVENT_PATH="${GITHUB_EVENT_PATH}"                      # Github Event Path
 GITHUB_SHA="${BITBUCKET_COMMIT}"                              # GitHub sha from the commit
 GITHUB_ORG="${BITBUCKET_REPO_OWNER}"                          # GitHub sha from the commit
 GITHUB_REPO="${BITBUCKET_REPO_SLUG}"                          # GitHub sha from the commit
-GITHUB_EVENT_PATH="${GITHUB_EVENT_PATH}"                      # Github Event Path
 GITHUB_WORKSPACE="${BITBUCKET_CLONE_DIR}"                     # Github Workspace
 DEFAULT_BRANCH="${DEFAULT_BRANCH:-$BITBUCKET_BRANCH}"         # Default Git Branch to use (master by default)
 BITBUCKET_CODENOTIFY="${BITBUCKET_CODENOTIFY}"                # Boolean to enable bitbucket report api

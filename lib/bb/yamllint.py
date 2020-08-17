@@ -1,7 +1,7 @@
 from . import lint2bb_parser
 
-
-# docker run -v $PWD/./config/dev/base:/tmp/lint -e RUN_LOCAL=true -eVALIDATE_YML=true  --rm -it jlongman/super-linter:stable
+# docker run -v $PWD/./config/dev/base:/tmp/lint -e RUN_LOCAL=true -eVALIDATE_YML=true \
+#      --rm -it jlongman/super-linter:stable
 # ERROR:[/tmp/lint/config/dev/base/bastion.yaml
 #   1:1       warning  missing document start "---"  (document-start)
 #   9:18      warning  too many spaces inside braces  (braces)
@@ -19,7 +19,7 @@ levels = {
 def get_level(level):
     try:
         return levels[level]
-    except:
+    except KeyError:
         return "HIGH"
 
 
