@@ -10,7 +10,7 @@ Example
 Now test it:
 
    >>> Parser("a", "b", "c").parse(messages)
-   [{'parser': 'a', 'fileType': 'b', 'file': 'c', 'line': 16, 'level': 'MEDIUM', 'severity': 'MEDIUM', 'message': ' aws s3 cp s3://${ENVNAME}-service-discovery/${STACK_PREFIX}LiveModels.service.url - ^--------^ SC2086: Double quote to prevent globbing and word splitting. ^-------------^ SC2086: Double quote to prevent globbing and word splitting. Did you mean: aws s3 cp s3://"${ENVNAME}"-service-discovery/"${STACK_PREFIX}"LiveModels.service.url -'}]
+   [{'parser': 'a', 'fileType': 'b', 'file': 'c', 'line': 16, 'level': 'MEDIUM', 'severity': 'MEDIUM', 'message': 'aws s3 cp s3://${ENVNAME}-service-discovery/${STACK_PREFIX}LiveModels.service.url - ^--------^ SC2086: Double quote to prevent globbing and word splitting. ^-------------^ SC2086: Double quote to prevent globbing and word splitting. Did you mean: aws s3 cp s3://"${ENVNAME}"-service-discovery/"${STACK_PREFIX}"LiveModels.service.url -'}]
 
 Example 2
 =========
@@ -21,7 +21,7 @@ Example 2
 Now test it:
 
    >>> Parser("a", "b", "c").parse(messages)
-   [{'parser': 'a', 'fileType': 'b', 'file': 'c', 'line': 66, 'level': 'MEDIUM', 'severity': 'MEDIUM', 'message': ' xxx'}]
+   [{'parser': 'a', 'fileType': 'b', 'file': 'c', 'line': 66, 'level': 'MEDIUM', 'severity': 'MEDIUM', 'message': 'xxx'}]
 
 Example 2
 =========
@@ -32,5 +32,5 @@ Example 2
 Now test it:
 
    >>> Parser("a", "b", "c").parse(messages)
-   [{'parser': 'a', 'fileType': 'b', 'file': 'c', 'line': 6, 'level': 'MEDIUM', 'severity': 'MEDIUM', 'message': ' xxx'}, {'parser': 'a', 'fileType': 'b', 'file': 'c', 'line': 9, 'level': 'MEDIUM', 'severity': 'MEDIUM', 'message': ' yyy'}]
+   [{'parser': 'a', 'fileType': 'b', 'file': 'c', 'line': 6, 'level': 'MEDIUM', 'severity': 'MEDIUM', 'message': 'xxx'}, {'parser': 'a', 'fileType': 'b', 'file': 'c', 'line': 9, 'level': 'MEDIUM', 'severity': 'MEDIUM', 'message': 'yyy'}]
 

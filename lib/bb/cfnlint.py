@@ -4,6 +4,14 @@ from . import lint2bb_parser
 ERROR_LEVEL = "MEDIUM"
 
 
+# docker run -v $PWD/./cloudformation/templates/yaml/prod:/tmp/lint -e RUN_LOCAL=true
+#    -eVALIDATE_CLOUDFORMATION=true  --rm -it jlongman/super-linter:stable
+# 2020-08-17 00:55:36 [ERROR ]   [W1001 Ref to resource "AdminScale" that may not be available when condition "IsProd" is False at Outputs/AdminAutoScalingGroup/Value/Ref
+# /tmp/lint/cloudformation/templates/yaml/prod/90.manyvids-app-prod.cf.yaml:44:5
+#
+# W3005 Obsolete DependsOn on resource (MvWebAccessSG), dependency already enforced by a "Ref" at Resources/MvInternalSG/Properties/SecurityGroupIngress/0/SourceSecurityGroupId/Ref
+# /tmp/lint/cloudformation/templates/yaml/prod/90.manyvids-app-prod.cf.yaml:123:5
+
 class Parser(lint2bb_parser):
     def __init__(self, linter, file_type, file):
         lint2bb_parser.__init__(self, linter, file_type, file)
@@ -20,35 +28,23 @@ class Parser(lint2bb_parser):
             if raw_line == "":
                 raw_line = messages.readline()
                 continue
-            if raw_line.startswith("In "):
-                if last_message is not None:
-                    event = self.to_event(last_message, last_summary, line)
-                    errors.append(event)
-                last_message = None
-                last_summary = None
-                line_offset = raw_line.index(" line ") + len(" line ")
-                line = raw_line[line_offset:-1]
-            else:
-                if raw_line.startswith("^-- "):
-                    last_summary = raw_line[len("^-- "):]
-                if last_message is None:
-                    last_message = raw_line
-                else:
-                    last_message = f"{last_message} {raw_line}"
+            rcolumn, rline, rmessage = raw_line[::-1].split(':', 2)
+            message = rmessage[::-1]
+            column = rcolumn[::-1]
+            line = rline[::-1]
             raw_line = messages.readline()
-
-        if last_message is not None:
-            event = self.to_event(last_message, last_summary, line)
+            event = self.to_event(message, None, line, column)
             errors.append(event)
 
         return errors
 
-    def to_event(self, last_message, summary, line):
+    def to_event(self, last_message, summary, line, column):
         event = {
             "parser": self.linter,
             "fileType": self.file_type,
             "file": self.file,
             "line": int(line),
+            "column": int(column),
             "level": ERROR_LEVEL,
             "severity": ERROR_LEVEL,
             "message": last_message,
@@ -60,4 +56,5 @@ class Parser(lint2bb_parser):
 
 if __name__ == "__main__":
     import doctest
-    doctest.testfile("shellcheck.doctest")
+
+    doctest.testfile("cfnlint.doctest")

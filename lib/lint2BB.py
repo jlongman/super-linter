@@ -152,6 +152,7 @@ if True:
 
     new_total = -1
     try:
+        linter = linter.replace('-','')
         mod = importlib.import_module("{}.{}".format('bb', linter))
 
         parser = mod.Parser(linter, file_type, file_name)
