@@ -38,7 +38,7 @@ def report(this_count, data):
         'summary': '{linter} detected a problem'.format(linter=linter),
         'details': data["message"],
     }
-    call_bitbucket(report_url, document)
+    call_bitbucket("put", report_url, document)
 
 
 def annotate_single(this_count, data):
@@ -46,16 +46,27 @@ def annotate_single(this_count, data):
     annotation_url = report_url + "/annotations/{}".format(
         this_count
     )
-    call_bitbucket(annotation_url, document)
+    call_bitbucket("put", annotation_url, document)
 
 
-def call_bitbucket(annotation_url, document):
-    r = requests.put(
-        url=annotation_url,
-        proxies=proxies,
-        headers=headers,
-        data=json.dumps(document)
-    )
+def call_bitbucket(verb, annotation_url, document):
+    if "put" == verb:
+        r = requests.put(
+            url=annotation_url,
+            proxies=proxies,
+            headers=headers,
+            data=json.dumps(document)
+        )
+    elif "post" == verb:
+        r = requests.post(
+            url=annotation_url,
+            proxies=proxies,
+            headers=headers,
+            data=json.dumps(document)
+        )
+    else:
+        print(f"INTERNAL ERROR: INVALID METHOD {verb}", file=sys.stderr)
+        exit(2)
     if r.status_code != 200:
         print(json.dumps(document), file=sys.stderr)
         pprint.pprint(r, stream=sys.stderr)
@@ -68,7 +79,7 @@ def annotate_batch(this_count, data):
         this_count += 1
         annotations.append(get_annotation_document(single_result, this_count))
     group_annotation_url = report_url + "/annotations"
-    call_bitbucket(group_annotation_url, annotations)
+    call_bitbucket("post", group_annotation_url, annotations)
 
 
 def get_annotation_document(data, this_count):
