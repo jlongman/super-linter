@@ -221,7 +221,7 @@ function LintCodebase() {
       # Load the error code #
       #######################
       ERROR_CODE=$?
-      FILE=$(FILE/"$GITHUB_WORKSPACE"/.) # TODO why this necessary?
+      FILE=${FILE/"$GITHUB_WORKSPACE"/.} # TODO why this necessary?
 
       ##############################
       # Check the shell for errors #
