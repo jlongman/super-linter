@@ -10,11 +10,9 @@ repo_owner = os.getenv("BITBUCKET_REPO_OWNER")
 repo_slug = os.getenv("BITBUCKET_REPO_SLUG")
 bitbucket_commit = os.getenv("BITBUCKET_COMMIT")
 
-report_url = "http://api.bitbucket.org/2.0/repositories/{}/{}/commit/{}/reports/superlint".format(
-    repo_owner,
-    repo_slug,
-    bitbucket_commit,
-)
+report_url = f"http://api.bitbucket.org/2.0/repositories/{repo_owner}/{repo_slug}" \
+             f"/commit/{bitbucket_commit}/reports/superlint"
+
 headers = {
     'content-type': 'application/json'
 }
@@ -26,16 +24,16 @@ proxies = {
 
 def report(this_count, data):
     document = {
-        'title': 'SuperLinter scan report {}'.format(this_count),
+        'title': f'SuperLinter scan report {this_count}',
         'report_type': 'BUG',
         'reporter': linter,
-        'result': '{result}'.format(result=data["result"]),
+        'result': f'{data["result"]}',
         'data': [{
             'title': 'Safe to merge?',
             'type': 'BOOLEAN',
             'value': data["safe"]
         }],
-        'summary': '{linter} detected a problem'.format(linter=linter),
+        'summary': f'{linter} detected a problem',
         'details': data["message"],
     }
     call_bitbucket("put", report_url, document)
@@ -43,30 +41,29 @@ def report(this_count, data):
 
 def annotate_single(this_count, data):
     document = get_annotation_document(data, this_count)
-    annotation_url = report_url + "/annotations/{}".format(
-        this_count
-    )
+    annotation_url = report_url + f"/annotations/{this_count}"
     call_bitbucket("put", annotation_url, document)
 
 
-def call_bitbucket(verb, annotation_url, document):
+def call_bitbucket(verb, api_url, document):
+    print(f'{verb} to {api_url}', file = sys.stderr)
     if "put" == verb:
         r = requests.put(
-            url=annotation_url,
+            url=api_url,
             proxies=proxies,
             headers=headers,
             data=json.dumps(document)
         )
     elif "post" == verb:
         r = requests.post(
-            url=annotation_url,
+            url=api_url,
             proxies=proxies,
             headers=headers,
             data=json.dumps(document)
         )
     else:
         print(f"INTERNAL ERROR: INVALID METHOD {verb}", file=sys.stderr)
-        exit(2)
+        sys.exit(2)
     if r.status_code != 200:
         print(json.dumps(document), file=sys.stderr)
         pprint.pprint(r, stream=sys.stderr)
@@ -84,7 +81,7 @@ def annotate_batch(this_count, data):
 
 def get_annotation_document(data, this_count):
     detail = data["message"]
-    if "summary" in data.keys():
+    if "summary" in data:
         if data["summary"] is None:
             summary = data["message"]
         else:
@@ -93,12 +90,12 @@ def get_annotation_document(data, this_count):
         summary = data["message"]
     if len(summary) > 100:
         summary = "{}...".format(summary[:96])
-
     if len(detail) > 2000:
         detail = "{}...".format(detail[:1996])
+
     document = {
-        'external_id': 'super-{linter}-{filetype}-{count}'.format(linter=linter, filetype=file_type, count=this_count),
-        'title': '{linter} - {filetype}'.format(linter=linter, filetype=file_type),
+        'external_id': f'super-{linter}-{file_type}-{this_count}',
+        'title': f'{linter} - {file_type}',
         'summary': summary,
         'annotation_type': 'CODE_SMELL',
         'reporter': 'superlint',
@@ -110,7 +107,7 @@ def get_annotation_document(data, this_count):
         if isinstance(data['line'], int) and int(data['line']) > 0:
             document['line'] = data['line']
         else:
-            print("Unexpected data['line']: {}".format(data['line']), file=sys.stderr)
+            print(f"Unexpected data['line']: {data['line']}", file=sys.stderr)
     if 'column' in data:
         document['column'] = data['column']
     document["data"] = [{
