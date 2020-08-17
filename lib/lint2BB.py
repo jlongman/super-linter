@@ -38,16 +38,7 @@ def report(this_count, data):
         'summary': '{linter} detected a problem'.format(linter=linter),
         'details': data["message"],
     }
-    r = requests.put(
-        url=report_url,
-        proxies=proxies,
-        headers=headers,
-        data=json.dumps(document)
-    )
-    if r.status_code != 200:
-        print(json.dumps(document), file=sys.stderr)
-        pprint.pprint(r, stream=sys.stderr)
-        pprint.pprint(r.text, stream=sys.stderr)
+    call_bitbucket(report_url, document)
 
 
 def annotate_single(this_count, data):
@@ -55,7 +46,10 @@ def annotate_single(this_count, data):
     annotation_url = report_url + "/annotations/{}".format(
         this_count
     )
+    call_bitbucket(annotation_url, document)
 
+
+def call_bitbucket(annotation_url, document):
     r = requests.put(
         url=annotation_url,
         proxies=proxies,
@@ -73,18 +67,8 @@ def annotate_batch(this_count, data):
     for single_result in data:
         this_count += 1
         annotations.append(get_annotation_document(single_result, this_count))
-
     group_annotation_url = report_url + "/annotations"
-    r = requests.post(
-        url=group_annotation_url,
-        proxies=proxies,
-        headers=headers,
-        data=json.dumps(annotations)
-    )
-    if r.status_code != 200:
-        print(json.dumps(annotations), file=sys.stderr)
-        pprint.pprint(r, stream=sys.stderr)
-        pprint.pprint(r.text, stream=sys.stderr)
+    call_bitbucket(group_annotation_url, annotations)
 
 
 def get_annotation_document(data, this_count):
@@ -152,7 +136,7 @@ if True:
 
     new_total = -1
     try:
-        linter = linter.replace('-','')
+        linter = linter.replace('-', '')
         mod = importlib.import_module("{}.{}".format('bb', linter))
 
         parser = mod.Parser(linter, file_type, file_name)
