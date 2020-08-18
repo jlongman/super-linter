@@ -23,7 +23,7 @@ Now test it:
    >>> Parser("a", "b", "c").parse(messages)
    [{'parser': 'a', 'fileType': 'b', 'file': 'c', 'line': 66, 'level': 'MEDIUM', 'severity': 'MEDIUM', 'message': 'xxx'}]
 
-Example 2
+Example 3
 =========
 
    >>> in_messages = """\nIn /filename line 6:\nxxx\nIn /namefile line 9:\nyyy"""

@@ -32,9 +32,9 @@ class Parser(lint2bb_parser):
             message = rmessage[::-1]
             column = rcolumn[::-1]
             line = rline[::-1]
-            raw_line = messages.readline()
             event = self.to_event(message, None, line, column)
             errors.append(event)
+            raw_line = messages.readline()
 
         return errors
 

@@ -10,9 +10,6 @@ repo_owner = os.getenv("BITBUCKET_REPO_OWNER")
 repo_slug = os.getenv("BITBUCKET_REPO_SLUG")
 bitbucket_commit = os.getenv("BITBUCKET_COMMIT")
 
-report_url = f"http://api.bitbucket.org/2.0/repositories/{repo_owner}/{repo_slug}" \
-             f"/commit/{bitbucket_commit}/reports/superlint"
-
 headers = {
     'content-type': 'application/json'
 }
@@ -24,7 +21,7 @@ proxies = {
 
 def report(this_count, data):
     document = {
-        'title': f'SuperLinter scan report {this_count}',
+        'title': f'{linter} - SuperLinter {this_count}',
         'report_type': 'BUG',
         'reporter': linter,
         'result': f'{data["result"]}',
@@ -46,7 +43,7 @@ def annotate_single(this_count, data):
 
 
 def call_bitbucket(verb, api_url, document):
-    print(f'{verb} to {api_url}', file = sys.stderr)
+    # print(f'{verb} to {api_url}', file = sys.stderr)
     if "put" == verb:
         r = requests.put(
             url=api_url,
@@ -123,6 +120,9 @@ def get_annotation_document(data, this_count):
 if True:
     messages = sys.stdin
     linter = messages.readline().strip()
+    report_url = f"http://api.bitbucket.org/2.0/repositories/{repo_owner}/{repo_slug}" \
+                 f"/commit/{bitbucket_commit}/reports/{linter}"
+
     print("linter {}".format(linter), file=sys.stderr)
     file_type = messages.readline().strip()
     file_name = messages.readline().strip()
@@ -146,7 +146,6 @@ if True:
     try:
         linter = linter.replace('-', '')
         mod = importlib.import_module("{}.{}".format('bb', linter))
-
         parser = mod.Parser(linter, file_type, file_name)
         result = parser.parse(messages)
         # pprint.pprint(result)

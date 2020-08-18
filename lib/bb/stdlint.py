@@ -47,6 +47,8 @@ class Parser(lint2bb_parser):
         >>> Parser("a","b","c").process_line("x:999 xxx")
         {'parser': 'a', 'fileType': 'b', 'file': 'c', 'line': 999, 'level': 'HIGH', 'message': \
 'xxx', 'severity': 'HIGH'}
+        >>> Parser("a","b","c").process_line("xxxxx")
+        skipping xxxxx
         """
         try:
             raw_line = raw_line.strip()
@@ -80,9 +82,11 @@ class Parser(lint2bb_parser):
         except Exception as e:
             pprint.pprint(raw_line, stream=sys.stderr)
             pprint.pprint(e, stream=sys.stderr)
+            print(f"skipping {raw_line}")
             return None
 
-    def has_column(self, raw_line):
+    @staticmethod
+    def has_column(raw_line):
         first_colon = raw_line.index(':')
         try:
             first_space_after_first_colon = raw_line.index(' ', first_colon)
