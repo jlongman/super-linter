@@ -12,82 +12,94 @@
 function BuildFileList() {
   # Need to build a list of all files changed
   # This can be pulled from the GITHUB_EVENT_PATH payload
-  if [[ -n "${BITBUCKET_CLONE_DIR}" ]]; then
-    set -x
-    mkdir -p ~/.ssh
-    (
-      umask 077
-      echo "$THIS_SSH_KEY" >~/.ssh/id_rsa
-    )
-
-    git remote set-url origin "${BITBUCKET_GIT_SSH_ORIGIN}" # TODO if we go with this we need to install ssh `
-    #            git remote set-url origin "${BITBUCKET_GIT_HTTP_ORIGIN}"
-    #            git remote set-url origin 'http://host.docker.internal:29418'
-    git diff --names-only HEAD~1
-
-    #    if [ ${#RAW_FILE_ARRAY[@]} -eq 0 ]; then
-    #      echo No files in changelist? Unlikely. Erroring.
-    #      exit 1
-    #    fi
-    #
-    # FIXME solve this problem
-    set +x
-  fi
-  if true; then
-    #    git remote set-url origin "${BITBUCKET_GIT_SSH_ORIGIN}"  # TODO if we go with this we need to install ssh `
-
   ################
   # print header #
   ################
   debug "----------------------------------------------"
   debug "Pulling in code history and branches..."
 
-  #################################################################################
-  # Switch codebase back to the default branch to get a list of all files changed #
-  #################################################################################
-  SWITCH_CMD=$(
-    git -C "${GITHUB_WORKSPACE}" pull --quiet
-    git -C "${GITHUB_WORKSPACE}" checkout "${DEFAULT_BRANCH}" 2>&1
-  )
+  if [[ -n "${BITBUCKET_CLONE_DIR}" ]]; then
+    BACKUP_PROXY=$(git config "http.${BITBUCKET_GIT_HTTP_ORIGIN}.proxy")
+    git config "http.${BITBUCKET_GIT_HTTP_ORIGIN}.proxy" http://host.docker.internal:29418
+    git fetch origin "${DEFAULT_BRANCH}"
+    #######################
+    # Load the error code #
+    #######################
+    ERROR_CODE=$?
 
-  #######################
-  # Load the error code #
-  #######################
-  ERROR_CODE=$?
+    ##############################
+    # Check the shell for errors #
+    ##############################
+    if [ ${ERROR_CODE} -ne 0 ]; then
+      # Error
+      info "Failed to switch to ${DEFAULT_BRANCH} branch to get files changed!"
+      fatal "[${SWITCH_CMD}]"
+    fi
 
-  ##############################
-  # Check the shell for errors #
-  ##############################
-  if [ ${ERROR_CODE} -ne 0 ]; then
-    # Error
-    info "Failed to switch to ${DEFAULT_BRANCH} branch to get files changed!"
-    fatal "[${SWITCH_CMD}]"
-  fi
+    mapfile -t RAW_FILE_ARRAY < <(git -C "${GITHUB_WORKSPACE}" diff --name-only "FETCH_HEAD..${GITHUB_SHA}" --diff-filter=d 2>&1)
 
-  ################
-  # print header #
-  ################
-  debug "----------------------------------------------"
-  debug "Generating Diff with:[git diff --name-only '${DEFAULT_BRANCH}..${GITHUB_SHA}' --diff-filter=d]"
+    #######################
+    # Load the error code #
+    #######################
+    ERROR_CODE=$?
 
-  #################################################
-  # Get the Array of files changed in the commits #
-  #################################################
-  mapfile -t RAW_FILE_ARRAY < <(git -C "${GITHUB_WORKSPACE}" diff --name-only "${DEFAULT_BRANCH}..${GITHUB_SHA}" --diff-filter=d 2>&1)
+    ##############################
+    # Check the shell for errors #
+    ##############################
+    if [ ${ERROR_CODE} -ne 0 ]; then
+      # Error
+      error "Failed to gain a list of all files changed!"
+      fatal "[${RAW_FILE_ARRAY[*]}]"
+    fi
 
-  #######################
-  # Load the error code #
-  #######################
-  ERROR_CODE=$?
+    git config "http.${BITBUCKET_GIT_HTTP_ORIGIN}.proxy" "$BACKUP_PROXY"
+  else
+    #################################################################################
+    # Switch codebase back to the default branch to get a list of all files changed #
+    #################################################################################
+    SWITCH_CMD=$(
+      git -C "${GITHUB_WORKSPACE}" pull --quiet
+      git -C "${GITHUB_WORKSPACE}" checkout "${DEFAULT_BRANCH}" 2>&1
+    )
 
-  ##############################
-  # Check the shell for errors #
-  ##############################
-  if [ ${ERROR_CODE} -ne 0 ]; then
-    # Error
-    error "Failed to gain a list of all files changed!"
-    fatal "[${RAW_FILE_ARRAY[*]}]"
-  fi
+    #######################
+    # Load the error code #
+    #######################
+    ERROR_CODE=$?
+
+    ##############################
+    # Check the shell for errors #
+    ##############################
+    if [ ${ERROR_CODE} -ne 0 ]; then
+      # Error
+      info "Failed to switch to ${DEFAULT_BRANCH} branch to get files changed!"
+      fatal "[${SWITCH_CMD}]"
+    fi
+
+    ################
+    # print header #
+    ################
+    debug "----------------------------------------------"
+    debug "Generating Diff with:[git diff --name-only '${DEFAULT_BRANCH}..${GITHUB_SHA}' --diff-filter=d]"
+
+    #################################################
+    # Get the Array of files changed in the commits #
+    #################################################
+    mapfile -t RAW_FILE_ARRAY < <(git -C "${GITHUB_WORKSPACE}" diff --name-only "${DEFAULT_BRANCH}..${GITHUB_SHA}" --diff-filter=d 2>&1)
+
+    #######################
+    # Load the error code #
+    #######################
+    ERROR_CODE=$?
+
+    ##############################
+    # Check the shell for errors #
+    ##############################
+    if [ ${ERROR_CODE} -ne 0 ]; then
+      # Error
+      error "Failed to gain a list of all files changed!"
+      fatal "[${RAW_FILE_ARRAY[*]}]"
+    fi
   fi
   ################################################
   # Iterate through the array of all files found #
@@ -223,7 +235,7 @@ function BuildFileList() {
     ######################
     # Get the PERL files #
     ######################
-    elif [ "${FILE_TYPE}" == "pl" ] || [ "${FILE_TYPE}" == "pm" ] || 
+    elif [ "${FILE_TYPE}" == "pl" ] || [ "${FILE_TYPE}" == "pm" ] ||
       [ "${FILE_TYPE}" == "t" ]; then
       ################################
       # Append the file to the array #
