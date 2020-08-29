@@ -423,124 +423,8 @@ Header() {
   info "---------------------------------------------"
 }
 ################################################################################
-#### Function GetLinterVersions ################################################
-GetLinterVersions() {
-  #########################
-  # Print version headers #
-  #########################
-  debug "---------------------------------------------"
-  debug "Linter Version Info:"
-
-  ##########################################################
-  # Go through the array of linters and print version info #
-  ##########################################################
-  for LINTER in "${LINTER_ARRAY[@]}"; do
-    ####################
-    # Get the versions #
-    ####################
-    if [[ ${LINTER} == "arm-ttk" ]]; then
-      # Need specific command for ARM
-      mapfile -t GET_VERSION_CMD < <(grep -iE 'version' "${ARM_TTK_PSD1}" | xargs 2>&1)
-    elif [[ ${LINTER} == "protolint" ]]; then
-      # Need specific command for Protolint
-      mapfile -t GET_VERSION_CMD < <(echo "--version not supported")
-    else
-      # Standard version command
-      mapfile -t GET_VERSION_CMD < <("${LINTER}" --version 2>&1)
-    fi
-
-    #######################
-    # Load the error code #
-    #######################
-    ERROR_CODE=$?
-
-    ##############################
-    # Check the shell for errors #
-    ##############################
-    if [ ${ERROR_CODE} -ne 0 ] || [ -z "${GET_VERSION_CMD[*]}" ]; then
-      warn "[${LINTER}]: Failed to get version info for:"
-    else
-      ##########################
-      # Print the version info #
-      ##########################
-      debug "Successfully found version for ${F[W]}[${LINTER}]${F[B]}: ${F[W]}${GET_VERSION_CMD[*]}"
-    fi
-  done
-
-  #########################
-  # Print version footers #
-  #########################
-  debug "---------------------------------------------"
-}
-################################################################################
 #### Function GetLinterRules ###################################################
-GetLinterRules() {
-  # Need to validate the rules files exist
 
-  ################
-  # Pull in vars #
-  ################
-  LANGUAGE_NAME="${1}" # Name of the language were looking for
-
-  #######################################################
-  # Need to create the variables for the real variables #
-  #######################################################
-  LANGUAGE_FILE_NAME="${LANGUAGE_NAME}_FILE_NAME"
-  LANGUAGE_LINTER_RULES="${LANGUAGE_NAME}_LINTER_RULES"
-
-  ##########################
-  # Get the file extension #
-  ##########################
-  FILE_EXTENSION=$(echo "${!LANGUAGE_FILE_NAME}" | rev | cut -d'.' -f1 | rev)
-  FILE_NAME=$(echo "${!LANGUAGE_FILE_NAME}" | rev | cut -d'.' -f2 | rev)
-
-  ###############################
-  # Set the secondary file name #
-  ###############################
-  SECONDARY_FILE_NAME=''
-
-  #################################
-  # Check for secondary file name #
-  #################################
-  if [[ $FILE_EXTENSION == 'yml' ]]; then
-    # Need to see if yaml also exists
-    SECONDARY_FILE_NAME="$FILE_NAME.yaml"
-  elif [[ $FILE_EXTENSION == 'yaml' ]]; then
-    # need to see if yml also exists
-    SECONDARY_FILE_NAME="$FILE_NAME.yml"
-  fi
-
-  #####################################
-  # Validate we have the linter rules #
-  #####################################
-  if [ -f "${GITHUB_WORKSPACE}/${LINTER_RULES_PATH}/${!LANGUAGE_FILE_NAME}" ]; then
-    info "----------------------------------------------"
-    info "User provided file:[${!LANGUAGE_FILE_NAME}], setting rules file..."
-
-    ########################################
-    # Update the path to the file location #
-    ########################################
-    eval "${LANGUAGE_LINTER_RULES}=${GITHUB_WORKSPACE}/${LINTER_RULES_PATH}/${!LANGUAGE_FILE_NAME}"
-  else
-    # Check if we have secondary name to check
-    if [ -n "$SECONDARY_FILE_NAME" ]; then
-      # We have a secondary name to validate
-      if [ -f "${GITHUB_WORKSPACE}/${LINTER_RULES_PATH}/${SECONDARY_FILE_NAME}" ]; then
-        info "----------------------------------------------"
-        info "User provided file:[${SECONDARY_FILE_NAME}], setting rules file..."
-
-        ########################################
-        # Update the path to the file location #
-        ########################################
-        eval "${LANGUAGE_LINTER_RULES}=${GITHUB_WORKSPACE}/${LINTER_RULES_PATH}/${SECONDARY_FILE_NAME}"
-      fi
-    fi
-    ########################################################
-    # No user default provided, using the template default #
-    ########################################################
-    debug "  -> Codebase does NOT have file:[${LINTER_RULES_PATH}/${!LANGUAGE_FILE_NAME}], using Default rules at:[${!LANGUAGE_LINTER_RULES}]"
-  fi
-}
 ################################################################################
 #### Function GetStandardRules #################################################
 GetStandardRules() {
@@ -1163,64 +1047,11 @@ GetGitHubVars
 #########################################
 GetValidationInfo
 
-########################
-# Get the linter rules #
-########################
-# Get Ansible rules
-GetLinterRules "ANSIBLE"
-# Get ARM rules
-GetLinterRules "ARM"
-# Get CLOUDFORMATION rules
-GetLinterRules "CLOUDFORMATION"
-# Get Coffeescript rules
-GetLinterRules "COFFEESCRIPT"
-# Get CSS rules
-GetLinterRules "CSS"
-# Get DART rules
-GetLinterRules "DART"
-# Get Docker rules
-GetLinterRules "DOCKERFILE"
-# Get Docker rules
-GetLinterRules "DOCKERFILE_HADOLINT"
-# Get Golang rules
-GetLinterRules "GO"
-# Get Groovy rules
-GetLinterRules "GROOVY"
-# Get HTML rules
-GetLinterRules "HTML"
-# get Java rules
-GetLinterRules "JAVA"
-# Get JavaScript rules
-GetLinterRules "JAVASCRIPT"
-# Get LUA rules
-GetLinterRules "LUA"
-# Get Markdown rules
-GetLinterRules "MARKDOWN"
-# Get PHPCS rules
-GetLinterRules "PHP_PHPCS"
-# Get PHP_PHPSTAN rules
-GetLinterRules "PHP_PHPSTAN"
-# Get PHP_PSALM rules
-GetLinterRules "PHP_PSALM"
-# Get PowerShell rules
-GetLinterRules "POWERSHELL"
-# Get Python pylint rules
-GetLinterRules "PYTHON_PYLINT"
-# Get Python flake8 rules
-GetLinterRules "PYTHON_FLAKE8"
-# Get Ruby rules
-GetLinterRules "RUBY"
-# Get Terraform rules
-GetLinterRules "TERRAFORM"
-# Get TypeScript rules
-GetLinterRules "TYPESCRIPT"
-# Get YAML rules
-GetLinterRules "YAML"
 
-##################################
-# Get and print all version info #
-##################################
-GetLinterVersions
+###################################
+## Get and print all version info #
+###################################
+#GetLinterVersions
 
 ###########################################
 # Check to see if this is a test case run #

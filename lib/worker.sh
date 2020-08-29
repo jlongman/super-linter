@@ -9,7 +9,125 @@
 ################################################################################
 ################################################################################
 ########################## FUNCTION CALLS BELOW ################################
+
 ################################################################################
+#### Function GetLinterVersions ################################################
+GetLinterVersions() {
+  LINTER=$1
+  #########################
+  # Print version headers #
+  #########################
+  debug "---------------------------------------------"
+  debug "Linter Version Info:"
+
+  ##########################################################
+  # Go through the array of linters and print version info #
+  ##########################################################
+  #  for LINTER in "${LINTER_ARRAY[@]}"; do
+  ####################
+  # Get the versions #
+  ####################
+  if [[ ${LINTER} == "arm-ttk" ]]; then
+    # Need specific command for ARM
+    mapfile -t GET_VERSION_CMD < <(grep -iE 'version' "${ARM_TTK_PSD1}" | xargs 2>&1)
+  elif [[ ${LINTER} == "protolint" ]]; then
+    # Need specific command for Protolint
+    mapfile -t GET_VERSION_CMD < <(echo "--version not supported")
+  else
+    # Standard version command
+    mapfile -t GET_VERSION_CMD < <("${LINTER}" --version 2>&1)
+  fi
+
+  #######################
+  # Load the error code #
+  #######################
+  ERROR_CODE=$?
+
+  ##############################
+  # Check the shell for errors #
+  ##############################
+  if [ ${ERROR_CODE} -ne 0 ] || [ -z "${GET_VERSION_CMD[$LINTER]}" ]; then
+    warn "[${LINTER}]: Failed to get version info for:"
+  else
+    ##########################
+    # Print the version info #
+    ##########################
+    debug "Successfully found version for ${F[W]}[${LINTER}]${F[B]}: ${F[W]}${GET_VERSION_CMD[$LINTER]}"
+  fi
+  #  done
+
+  #########################
+  # Print version footers #
+  #########################
+  debug "---------------------------------------------"
+}
+GetLinterRules() {
+  # Need to validate the rules files exist
+
+  ################
+  # Pull in vars #
+  ################
+  LANGUAGE_NAME="${1}" # Name of the language were looking for
+
+  #######################################################
+  # Need to create the variables for the real variables #
+  #######################################################
+  LANGUAGE_FILE_NAME="${LANGUAGE_NAME}_FILE_NAME"
+  LANGUAGE_LINTER_RULES="${LANGUAGE_NAME}_LINTER_RULES"
+
+  ##########################
+  # Get the file extension #
+  ##########################
+  FILE_EXTENSION=$(echo "${!LANGUAGE_FILE_NAME}" | rev | cut -d'.' -f1 | rev)
+  FILE_NAME=$(echo "${!LANGUAGE_FILE_NAME}" | rev | cut -d'.' -f2 | rev)
+
+  ###############################
+  # Set the secondary file name #
+  ###############################
+  SECONDARY_FILE_NAME=''
+
+  #################################
+  # Check for secondary file name #
+  #################################
+  if [[ $FILE_EXTENSION == 'yml' ]]; then
+    # Need to see if yaml also exists
+    SECONDARY_FILE_NAME="$FILE_NAME.yaml"
+  elif [[ $FILE_EXTENSION == 'yaml' ]]; then
+    # need to see if yml also exists
+    SECONDARY_FILE_NAME="$FILE_NAME.yml"
+  fi
+
+  #####################################
+  # Validate we have the linter rules #
+  #####################################
+  if [ -f "${GITHUB_WORKSPACE}/${LINTER_RULES_PATH}/${!LANGUAGE_FILE_NAME}" ]; then
+    info "----------------------------------------------"
+    info "User provided file:[${!LANGUAGE_FILE_NAME}], setting rules file..."
+
+    ########################################
+    # Update the path to the file location #
+    ########################################
+    eval "${LANGUAGE_LINTER_RULES}=${GITHUB_WORKSPACE}/${LINTER_RULES_PATH}/${!LANGUAGE_FILE_NAME}"
+  else
+    # Check if we have secondary name to check
+    if [ -n "$SECONDARY_FILE_NAME" ]; then
+      # We have a secondary name to validate
+      if [ -f "${GITHUB_WORKSPACE}/${LINTER_RULES_PATH}/${SECONDARY_FILE_NAME}" ]; then
+        info "----------------------------------------------"
+        info "User provided file:[${SECONDARY_FILE_NAME}], setting rules file..."
+
+        ########################################
+        # Update the path to the file location #
+        ########################################
+        eval "${LANGUAGE_LINTER_RULES}=${GITHUB_WORKSPACE}/${LINTER_RULES_PATH}/${SECONDARY_FILE_NAME}"
+      fi
+    fi
+    ########################################################
+    # No user default provided, using the template default #
+    ########################################################
+    debug "  -> Codebase does NOT have file:[${LINTER_RULES_PATH}/${!LANGUAGE_FILE_NAME}], using Default rules at:[${!LANGUAGE_LINTER_RULES}]"
+  fi
+}
 ################################################################################
 #### Function LintCodebase #####################################################
 function LintCodebase() {
@@ -22,6 +140,8 @@ function LintCodebase() {
   FILE_EXTENSIONS="${1}" && shift # Pull the variable and remove from array path  (Example: *.json)
   FILE_ARRAY=("$@")               # Array of files to validate                    (Example: ${FILE_ARRAY_JSON})
 
+  GetLinterRules "$FILE_TYPE"
+  GetLinterVersions "$LINTER_NAME"
   ######################
   # Create Print Array #
   ######################
@@ -89,7 +209,6 @@ function LintCodebase() {
     # Get list of all files to lint #
     #################################
     mapfile -t LIST_FILES < <(find "${GITHUB_WORKSPACE}" -path "*/node_modules" -prune -o -type f -regex "${FILE_EXTENSIONS}" 2>&1)
-
     ###########################
     # Set IFS back to default #
     ###########################
