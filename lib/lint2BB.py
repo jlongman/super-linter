@@ -146,8 +146,8 @@ if True:
     try:
         linter = linter.replace('-', '')
         mod = importlib.import_module("{}.{}".format('bb', linter))
-    except:
-        mod = importlib.import_module("{}.{}".format('bb', 'bbdefault'))
+    # except ModuleNotFoundError:
+    #     mod = importlib.import_module("{}.{}".format('bb', 'bbdefault'))
     finally:
         parser = mod.Parser(linter, file_type, file_name)
         try:

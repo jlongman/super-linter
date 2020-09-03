@@ -30,4 +30,3 @@ if __name__ == "__main__":
     # run doctest by running : `python3 -m lib.bb.bbdefault`
     import doctest
     doctest.testfile("bbdefault.doctest")
-
