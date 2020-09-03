@@ -1,14 +1,7 @@
 from . import lint2bb_parser
-# from __init__ import lint2bb_parser # required for doctest, replace above
 
 import pprint
 import sys
-
-# /tmp/lint/README.md:15:23 MD009/no-trailing-spaces Trailing spaces [Expected: 0 or 2; Actual: 1]
-# /tmp/lint/README.md:26:43 MD009/no-trailing-spaces Trailing spaces [Expected: 0 or 2; Actual: 1]
-# /tmp/lint/README.md:29:42 MD009/no-trailing-spaces Trailing spaces [Expected: 0 or 2; Actual: 1]
-# /tmp/lint/README.md:5 MD025/single-title/single-h1 Multiple top level headings in the same document \
-#   [Context: "# CI Pipeline"]
 
 
 class Parser(lint2bb_parser):

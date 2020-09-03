@@ -1,13 +1,5 @@
 from . import lint2bb_parser
 
-# docker run -v $PWD/./config/dev/base:/tmp/lint -e RUN_LOCAL=true -eVALIDATE_YML=true \
-#      --rm -it jlongman/super-linter:stable
-# ERROR:[/tmp/lint/config/dev/base/bastion.yaml
-#   1:1       warning  missing document start "---"  (document-start)
-#   9:18      warning  too many spaces inside braces  (braces)
-#   9:49      warning  too many spaces inside braces  (braces)
-#   11:17     warning  too many spaces inside braces  (braces)
-#   11:39     warning  too many spaces inside braces  (braces)
 
 # lookup table
 levels = {
