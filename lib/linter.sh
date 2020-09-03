@@ -134,7 +134,7 @@ LINTER_ARRAY=('ansible-lint' 'arm-ttk' 'asl-validator' 'cfn-lint' 'checkstyle' '
   'hadolint' 'htmlhint' 'jsonlint' 'ktlint' 'lua' 'markdownlint' 'npm-groovy-lint' 'perl' 'protolint'
   'pwsh' 'pylint' 'raku' 'rubocop' 'shellcheck' 'spectral' 'standard' 'stylelint' 'sql-lint'
   'terrascan' 'tflint' 'xmllint' 'yamllint')
-
+export LINTER_ARRAY
 #############################
 # Language array for prints #
 #############################
