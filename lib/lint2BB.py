@@ -120,14 +120,14 @@ def get_annotation_document(data, this_count):
 if True:
     messages = sys.stdin
     linter = messages.readline().strip()
-    report_url = f"http://api.bitbucket.org/2.0/repositories/{repo_owner}/{repo_slug}" \
-                 f"/commit/{bitbucket_commit}/reports/{linter}"
 
     print("linter {}".format(linter), file=sys.stderr)
     file_type = messages.readline().strip()
     file_name = messages.readline().strip()
     count = int(messages.readline().strip())
     print("file_name {}".format(file_name), file=sys.stderr)
+    report_url = f"http://api.bitbucket.org/2.0/repositories/{repo_owner}/{repo_slug}" \
+                 f"/commit/{bitbucket_commit}/reports/{file_type}"
     # load the correct module
 
     good = count > 0
@@ -146,26 +146,29 @@ if True:
     try:
         linter = linter.replace('-', '')
         mod = importlib.import_module("{}.{}".format('bb', linter))
-        parser = mod.Parser(linter, file_type, file_name)
-        result = parser.parse(messages)
-        # pprint.pprint(result)
-        new_total = count + len(result)
-
-        if new_total > 0:
-            failed = "FAILED"
-            good = False
-        else:
-            failed = "PENDING"
-            good = True
-        report(new_total, {
-            'result': failed,
-            'safe': good,
-            'details': 'na',
-            'message': 'na'
-        })
-        # for problem in result:
-        #     annotate_single(count, problem)
-        #     count += 1
-        annotate_batch(count, result)
+    except:
+        mod = importlib.import_module("{}.{}".format('bb', 'bbdefault'))
     finally:
-        print(new_total)
+        parser = mod.Parser(linter, file_type, file_name)
+        try:
+            result = parser.parse(messages)
+            # pprint.pprint(result)
+            new_total = count + len(result)
+            if new_total > 0:
+                failed = "FAILED"
+                good = False
+            else:
+                failed = "PENDING"
+                good = True
+            report(new_total, {
+                'result': failed,
+                'safe': good,
+                'details': 'na',
+                'message': 'na'
+            })
+            # for problem in result:
+            #     annotate_single(count, problem)
+            #     count += 1
+            annotate_batch(count, result)
+        finally:
+            print(new_total)

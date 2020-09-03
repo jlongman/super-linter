@@ -1,5 +1,4 @@
 from . import lint2bb_parser
-# from __init__ import lint2bb_parser  # required for doctest, replace above
 
 ERROR_LEVEL = "MEDIUM"
 

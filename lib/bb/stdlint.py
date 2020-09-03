@@ -57,6 +57,8 @@ class Parser(lint2bb_parser):
                 # we have a column
                 file, line, parse_line = raw_line.split(':', 2)
                 column, message = parse_line.split(' ', 1)
+                if column.endswith(':'):
+                    column = column[:-1]
             else:
                 # we don't
                 file, parse_line = raw_line.split(':', 1)

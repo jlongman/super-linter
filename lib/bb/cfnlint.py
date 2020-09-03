@@ -18,8 +18,6 @@ class Parser(lint2bb_parser):
 
     def parse(self, messages):
         errors = []
-        last_message = None
-        last_summary = None
         raw_line = messages.readline()
         line = -1  # error case
         while raw_line != "":
