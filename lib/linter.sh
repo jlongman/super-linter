@@ -13,6 +13,8 @@ env | sort # FIXME debugging
 #########################
 if [[ -n "${BITBUCKET_CLONE_DIR}" ]]; then
   source /action/lib/bitbucket.sh # Source the function script(s)
+elif [[ -n "${CODEBUILD_SRC_DIR}" ]]; then
+  source /action/lib/codebuild.sh # Source the function script(s)
 fi
 # shellcheck source=/dev/null
 source /action/lib/log.sh                                                                # Source the function script(s)
@@ -1046,7 +1048,6 @@ GetGitHubVars
 # Get the languages we need to validate #
 #########################################
 GetValidationInfo
-
 
 ###################################
 ## Get and print all version info #

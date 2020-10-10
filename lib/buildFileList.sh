@@ -111,7 +111,7 @@ function BuildFileList() {
     # Get the files extension #
     ###########################
     # Extract just the file extension
-    FILE_TYPE=${FILE##*.}
+    FILE_TYPE=$(basename "${FILE##*.}")
     # To lowercase
     FILE_TYPE=${FILE_TYPE,,}
 
