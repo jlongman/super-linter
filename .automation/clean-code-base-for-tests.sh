@@ -7,16 +7,18 @@
 ###########
 # Globals #
 ###########
-GITHUB_WORKSPACE="${GITHUB_WORKSPACE}"  # GitHub Workspace
-GITHUB_SHA="${GITHUB_SHA}"              # Sha used to create this branch
-TEST_FOLDER='.automation/test'          # Folder where test are stored
-CLEAN_FOLDER='.automation/automation'   # Folder to rename to prevent skip
+GITHUB_WORKSPACE="${GITHUB_WORKSPACE}"                                               # GitHub Workspace
+GITHUB_SHA="${GITHUB_SHA}"                                                           # Sha used to create this branch
+TEST_FOLDER='.automation/test'                                                       # Folder where test are stored
+CLEAN_FOLDER='.automation/automation'                                                # Folder to rename to prevent skip
+((LOG_TRACE = LOG_DEBUG = LOG_VERBOSE = LOG_NOTICE = LOG_WARN = LOG_ERROR = "true")) # Enable all loging
+export LOG_TRACE LOG_DEBUG LOG_VERBOSE LOG_NOTICE LOG_WARN LOG_ERROR
 
 ############################
 # Source additonal scripts #
 ############################
 # shellcheck source=/dev/null
-source "${GITHUB_WORKSPACE}/lib/log.sh" # Source the function script(s)
+source "${GITHUB_WORKSPACE}/lib/functions/log.sh" # Source the function script(s)
 
 ################################################################################
 ############################ FUNCTIONS BELOW ###################################
@@ -37,7 +39,10 @@ CleanTestFiles() {
   ##################
   # Find the files #
   ##################
-  mapfile -t FIND_CMD < <(cd "${GITHUB_WORKSPACE}" || exit 1 ; find "${GITHUB_WORKSPACE}" -type f -name "*_bad_*" 2>&1)
+  mapfile -t FIND_CMD < <(
+    cd "${GITHUB_WORKSPACE}" || exit 1
+    find "${GITHUB_WORKSPACE}" -type f -name "*_bad_*" 2>&1
+  )
 
   #######################
   # Load the error code #
@@ -68,7 +73,10 @@ CleanTestFiles() {
       ################################
       # Its a test, we can delete it #
       ################################
-      REMOVE_FILE_CMD=$(cd "${GITHUB_WORKSPACE}" || exit 1; rm -f "$FILE" 2>&1)
+      REMOVE_FILE_CMD=$(
+        cd "${GITHUB_WORKSPACE}" || exit 1
+        rm -f "$FILE" 2>&1
+      )
 
       #######################
       # Load the error code #
@@ -94,7 +102,10 @@ CleanTestDockerFiles() {
   ##################
   # Find the files #
   ##################
-  mapfile -t FIND_CMD < <(cd "${GITHUB_WORKSPACE}" || exit 1 ; find "${GITHUB_WORKSPACE}" -type f -name "*Dockerfile" 2>&1)
+  mapfile -t FIND_CMD < <(
+    cd "${GITHUB_WORKSPACE}" || exit 1
+    find "${GITHUB_WORKSPACE}" -type f -name "*Dockerfile" 2>&1
+  )
 
   #######################
   # Load the error code #
@@ -121,11 +132,14 @@ CleanTestDockerFiles() {
     ##################################
     # Check if from the tests folder #
     ##################################
-    if [[ $FILE_DIR == **".automation/test/docker/bad"** ]]; then
+    if [[ $FILE_DIR != **".automation/test/docker/good"** ]]; then
       ################################
       # Its a test, we can delete it #
       ################################
-      REMOVE_FILE_CMD=$(cd "${GITHUB_WORKSPACE}" || exit 1; rm -f "$FILE" 2>&1)
+      REMOVE_FILE_CMD=$(
+        cd "${GITHUB_WORKSPACE}" || exit 1
+        rm -f "$FILE" 2>&1
+      )
 
       #######################
       # Load the error code #
@@ -151,7 +165,10 @@ CleanSHAFolder() {
   ##################
   # Find the files #
   ##################
-  REMOVE_CMD=$(cd "${GITHUB_WORKSPACE}" || exit 1; sudo rm -rf "${GITHUB_SHA}" 2>&1)
+  REMOVE_CMD=$(
+    cd "${GITHUB_WORKSPACE}" || exit 1
+    sudo rm -rf "${GITHUB_SHA}" 2>&1
+  )
 
   #######################
   # Load the error code #
@@ -176,7 +193,10 @@ RenameTestFolder() {
   #####################
   # Rename the folder #
   #####################
-  RENAME_FOLDER_CMD=$(cd "${GITHUB_WORKSPACE}" || exit 1; mv "${TEST_FOLDER}" "${CLEAN_FOLDER}" 2>&1)
+  RENAME_FOLDER_CMD=$(
+    cd "${GITHUB_WORKSPACE}" || exit 1
+    mv "${TEST_FOLDER}" "${CLEAN_FOLDER}" 2>&1
+  )
 
   #######################
   # Load the error code #
@@ -203,7 +223,10 @@ CleanPowershell() {
   ##################
   # Find the files #
   ##################
-  mapfile -t FIND_CMD < <(cd "${GITHUB_WORKSPACE}" || exit 1 ; find "${GITHUB_WORKSPACE}" -type f -name "*.psd1" 2>&1)
+  mapfile -t FIND_CMD < <(
+    cd "${GITHUB_WORKSPACE}" || exit 1
+    find "${GITHUB_WORKSPACE}" -type f -name "*.psd1" 2>&1
+  )
 
   #######################
   # Load the error code #
@@ -234,7 +257,10 @@ CleanPowershell() {
       ################################
       # Its a test, we can delete it #
       ################################
-      REMOVE_FILE_CMD=$(cd "${GITHUB_WORKSPACE}" || exit 1; rm -f "$FILE" 2>&1)
+      REMOVE_FILE_CMD=$(
+        cd "${GITHUB_WORKSPACE}" || exit 1
+        rm -f "$FILE" 2>&1
+      )
 
       #######################
       # Load the error code #
