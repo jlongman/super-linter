@@ -3,10 +3,12 @@
 ## Dockerfile to run GitHub Super-Linter ##
 ###########################################
 ###########################################
+
 ##################
 # Get base image #
 ##################
-FROM github/super-linter:v3.6.0
+FROM github/super-linter:v3.14.3
+
 RUN npm -g --no-cache install \
     tap-xunit@2.4.1 && \
     pip install --no-cache-dir \
@@ -76,8 +78,7 @@ ENV ACTIONS_RUNNER_DEBUG=${ACTIONS_RUNNER_DEBUG} \
     VALIDATE_TYPESCRIPT_STANDARD=${VALIDATE_TYPESCRIPT_STANDARD} \
     VALIDATE_XML=${VALIDATE_XML} \
     VALIDATE_YAML=${VALIDATE_YAML} \
-    BITBUCKET_CODENOTIFY=${BITBUCKET_CODENOTIFY}
-
+ BITBUCKET_CODENOTIFY=${BITBUCKET_CODENOTIFY}
 
 #############################
 # Copy scripts to container #

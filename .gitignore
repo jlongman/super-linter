@@ -69,6 +69,11 @@ typings/
 super-linter.report
 super-linter.log
 
+# bb
+ custom parsers
 *.pyc
 __pycache__
 
+
+# Git directory (useful for .dockerignore)
+.git

@@ -11,7 +11,7 @@ pipelines:
             variables:
               BITBUCKET_CODENOTIFY: "true"
               OUTPUT_FORMAT: "xunit"
-              VALIDATE_ALL_CODEBASE: "true" # note false not supported yet
+              VALIDATE_ALL_CODEBASE: "false" # note false not supported yet
               DEFAULT_BRANCH: "master"
   custom:
     full:
